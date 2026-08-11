@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="LiteWallet">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#1a1d24">
+    <meta name="theme-color" content="#131314">
     
     <title>LiteWallet</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -17,10 +17,10 @@
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        body { background-color: #1a1d24; color: #ffffff; overscroll-behavior-y: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #131314; color: #ffffff; overscroll-behavior-y: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
         input, textarea, select { -webkit-user-select: auto; user-select: auto; }
-        .border-custom { border-color: #353a47; }
-        .bg-custom-btn { background-color: rgba(255, 255, 255, 0.03); }
+        .border-custom { border-color: #444746; }
+        .bg-custom-btn { background-color: rgba(255, 255, 255, 0.04); }
         .bg-custom-btn:hover { background-color: rgba(255, 255, 255, 0.08); }
         input[type="date"], input[type="time"] { color-scheme: dark; }
         
@@ -34,17 +34,17 @@
 </head>
 <body class="font-sans antialiased selection:bg-blue-500">
 
-<div id="app" class="max-w-md mx-auto h-[100dvh] flex flex-col relative overflow-hidden bg-[#1a1d24]">
+<div id="app" class="max-w-md mx-auto h-[100dvh] flex flex-col relative overflow-hidden bg-[#131314]">
     
     <!-- 全域 Loading 遮罩 -->
-    <div v-if="isLoading" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#1a1d24]/90 backdrop-blur-sm">
+    <div v-if="isLoading" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#131314]/90 backdrop-blur-sm">
         <i class="fas fa-circle-notch fa-spin text-4xl text-teal-400 mb-4"></i>
         <p class="text-gray-300 tracking-widest font-medium">資料同步中...</p>
     </div>
 
     <!-- 1. 總覽主畫面 (Dashboard) -->
     <div v-show="currentTab === 'home'" class="flex-1 flex flex-col w-full h-full overflow-y-auto">
-        <div class="bg-[#1a1d24] sticky top-0 z-10" style="padding-top: max(env(safe-area-inset-top), 20px);">
+        <div class="bg-[#131314] sticky top-0 z-10" style="padding-top: max(env(safe-area-inset-top), 20px);">
             <div class="relative flex justify-between items-center px-4 pt-3 pb-4">
                 <div class="w-16"></div>
                 <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-3">
@@ -58,7 +58,7 @@
                 </div>
             </div>
             <div v-if="showSearch" class="px-5 pb-3 animate-[fadeIn_0.2s_ease-out]">
-                <div class="bg-[#2A2D3A] rounded-xl flex items-center px-4 h-10 border border-gray-600 focus-within:border-[#54A0FF] transition-colors">
+                <div class="bg-[#282A2C] rounded-xl flex items-center px-4 h-10 border border-gray-600 focus-within:border-[#54A0FF] transition-colors">
                     <i class="fas fa-search text-gray-500 mr-2 text-sm"></i>
                     <input v-model="searchQuery" type="text" placeholder="搜尋項目、備註或金額..." class="bg-transparent w-full text-white outline-none text-sm placeholder-gray-500">
                 </div>
@@ -69,13 +69,13 @@
             <div class="grid grid-cols-7 text-center mb-4"><div v-for="day in ['週日','週一','週二','週三','週四','週五','週六']" :key="day" class="text-xs text-gray-400 font-medium">{{ day }}</div></div>
             <div class="grid grid-cols-7 text-center gap-y-4 transition-all">
                 <div v-for="(day, index) in visibleCalendarDays" :key="index" @click="selectDate(day)" class="flex justify-center items-center cursor-pointer">
-                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm transition-all" :class="[day.isDimmed ? 'text-gray-600' : (day.isSunday ? 'text-[#FF5252]' : 'text-gray-200'), day.isToday ? 'bg-[#2A2D3A]' : '', day.isSelected ? 'border-[1.5px] border-[#54A0FF] font-bold text-white shadow-[0_0_8px_rgba(84,160,255,0.3)]' : 'border-transparent']">{{ day.text }}</div>
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm transition-all" :class="[day.isDimmed ? 'text-gray-600' : (day.isSunday ? 'text-[#FF5252]' : 'text-gray-200'), day.isToday ? 'bg-[#282A2C]' : '', day.isSelected ? 'border-[1.5px] border-[#54A0FF] font-bold text-white shadow-[0_0_8px_rgba(84,160,255,0.3)]' : 'border-transparent']">{{ day.text }}</div>
                 </div>
             </div>
         </div>
 
-        <div class="px-4 pt-4 pb-32 bg-[#12141C] flex-1">
-            <div class="bg-[#232631] rounded-2xl p-4 flex justify-between items-center mb-4 border border-[#353a47]">
+        <div class="px-4 pt-4 pb-32 bg-[#0E0E0F] flex-1">
+            <div class="bg-[#1E1F22] rounded-2xl p-4 flex justify-between items-center mb-4 border border-[#444746]">
                 <div class="flex items-center space-x-4">
                     <div class="w-10 h-10 rounded-xl bg-white text-gray-800 flex items-center justify-center text-lg font-bold"><i class="far fa-calendar-alt text-yellow-500"></i></div>
                     <div><h3 class="text-gray-100 font-medium">當月統計</h3><p class="text-xs text-gray-500 mt-1">結餘 <span :class="currentMonthNet >= 0 ? 'text-[#10AC84]' : 'text-[#FF5252]'">{{ currentMonthNet >= 0 ? '+' : '' }}${{ currentMonthNet.toLocaleString() }}</span></p></div>
@@ -85,7 +85,7 @@
 
             <div class="space-y-4 mt-6">
                 <div v-if="filteredTransactions.length === 0" class="text-center text-gray-500 py-10"><i class="fas fa-receipt text-3xl mb-3"></i><p>這天還沒有任何紀錄喔</p></div>
-                <div v-for="item in filteredTransactions" :key="item.id" @click="openTransactionEdit(item)" class="flex justify-between items-center border-b border-[#353a47]/50 pb-4 last:border-0 cursor-pointer active:scale-95 transition-transform">
+                <div v-for="item in filteredTransactions" :key="item.id" @click="openTransactionEdit(item)" class="flex justify-between items-center border-b border-[#444746]/50 pb-4 last:border-0 cursor-pointer active:scale-95 transition-transform">
                     <div class="flex items-center space-x-4 pointer-events-none">
                         <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shadow-md" :style="{ backgroundColor: item.color }"><i :class="item.icon"></i></div>
                         <div>
@@ -103,8 +103,8 @@
 
 
     <!-- 2. 帳戶總覽畫面 (Wallet) -->
-    <div v-show="currentTab === 'wallet'" class="flex-1 flex flex-col w-full h-full overflow-hidden bg-[#1a1d24]">
-        <div class="sticky top-0 z-20 bg-[#1a1d24]" style="padding-top: max(env(safe-area-inset-top), 20px);">
+    <div v-show="currentTab === 'wallet'" class="flex-1 flex flex-col w-full h-full overflow-hidden bg-[#131314]">
+        <div class="sticky top-0 z-20 bg-[#131314]" style="padding-top: max(env(safe-area-inset-top), 20px);">
             <div class="relative flex justify-between items-center px-5 pt-4 pb-2">
                 <button @click="hideBalance = !hideBalance" class="text-gray-300 text-xl hover:text-white p-0 m-0 w-8 text-left"><i class="fas" :class="hideBalance ? 'fa-eye-slash' : 'fa-eye'"></i></button>
                 <h1 class="text-lg font-bold absolute left-1/2 transform -translate-x-1/2 tracking-wider">帳戶總覽</h1>
@@ -129,15 +129,15 @@
         </div>
 
         <div class="flex-1 overflow-y-auto flex flex-col">
-            <div class="bg-[#12141C] pt-6 pb-32 flex-1 rounded-t-3xl mt-2">
+            <div class="bg-[#0E0E0F] pt-6 pb-32 flex-1 rounded-t-3xl mt-2 border-t border-[#444746]/30">
                 <div v-for="(group, key) in groupedAccounts" :key="key" class="mb-4">
                     <div class="flex justify-between items-center px-6 py-2 text-gray-200">
                         <div class="flex items-center"><i class="fas fa-minus mr-2 text-gray-500 text-xs"></i> {{ key }}</div>
                         <div class="text-sm" :class="hideBalance ? 'text-gray-500' : 'text-gray-300'">{{ hideBalance ? '***' : '$' + getGroupTotal(group).toLocaleString() }}</div>
                     </div>
-                    <div v-for="acc in group" :key="acc.id" class="flex justify-between items-center px-6 py-4 hover:bg-[#1a1d24] transition-colors">
+                    <div v-for="acc in group" :key="acc.id" class="flex justify-between items-center px-6 py-4 hover:bg-[#131314] transition-colors">
                         <div class="flex items-center space-x-4">
-                            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl text-white bg-[#232631]"><i :class="acc.icon" :style="{ color: acc.color }"></i></div>
+                            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl text-white bg-[#1E1F22]"><i :class="acc.icon" :style="{ color: acc.color }"></i></div>
                             <h4 class="text-gray-200 font-medium text-base">{{ acc.name }}</h4>
                         </div>
                         <div class="font-medium" :class="hideBalance ? 'text-gray-500' : (acc.balance < 0 ? 'text-[#FF5252]' : 'text-[#10AC84]')">
@@ -152,13 +152,13 @@
 
     <!-- 3. 表單畫面 (Add / Edit Transaction) -->
     <div v-show="currentTab === 'form'" class="flex-1 flex flex-col w-full h-full overflow-hidden">
-        <div class="bg-[#1a1d24] sticky top-0 z-20" style="padding-top: max(env(safe-area-inset-top), 20px);">
+        <div class="bg-[#131314] sticky top-0 z-20" style="padding-top: max(env(safe-area-inset-top), 20px);">
             <div class="relative flex justify-between items-center px-5 pt-4 pb-5">
                 <button @click="currentTab = 'home'" class="text-gray-300 text-base hover:text-white transition-colors p-0 m-0">取消</button>
                 <h1 class="text-base font-bold absolute left-1/2 transform -translate-x-1/2 tracking-wider">{{ formMode === 'edit' ? '編輯記錄' : '新增記錄' }}</h1>
                 <button @click="saveTransaction" class="text-teal-400 text-base hover:text-teal-300 transition-colors font-medium p-0 m-0">儲存</button>
             </div>
-            <div class="border-b border-[#353a47]">
+            <div class="border-b border-[#444746]">
                 <div class="flex overflow-x-auto no-scrollbar">
                     <div class="flex space-x-6 px-5">
                         <button @click="setTransactionType('expense')" class="pb-3 text-sm font-medium transition-colors relative" :class="transactionType === 'expense' ? 'text-white' : 'text-gray-400 hover:text-gray-300'">支出<div v-if="transactionType === 'expense'" class="absolute bottom-0 left-0 w-full h-[2px] bg-[#FF5252]"></div></button>
@@ -172,7 +172,7 @@
         <div class="flex-1 overflow-y-auto px-5 pb-32 pt-6 overscroll-contain">
             <div class="space-y-3 mb-5">
                 <div class="rounded-xl border border-custom bg-custom-btn flex items-center px-4 h-14 focus-within:border-gray-400 transition-colors">
-                    <div class="bg-[#4a5a73] text-white px-2 py-0.5 rounded text-xs mr-3 font-medium">TWD</div>
+                    <div class="bg-[#282A2C] text-white px-2 py-0.5 rounded text-xs mr-3 font-medium">TWD</div>
                     <input v-model="amount" type="number" placeholder="金額" class="bg-transparent w-full text-right outline-none text-2xl placeholder-gray-500 font-bold" :class="{'text-[#FF5252]': transactionType === 'expense', 'text-[#10AC84]': transactionType === 'income', 'text-blue-400': transactionType === 'transfer'}">
                 </div>
                 <div class="rounded-xl border border-custom bg-custom-btn flex items-center px-4 h-14 focus-within:border-gray-400 transition-colors">
@@ -200,7 +200,7 @@
                     </div>
                     <div v-if="accounts.length === 0" class="text-xs text-gray-500">尚未建立帳戶</div>
                     <div class="flex space-x-3 overflow-x-auto no-scrollbar pb-1">
-                        <button v-for="acc in accounts" :key="acc.id" @click="selectedAccount = acc" class="relative flex-shrink-0 px-4 py-2 rounded-xl text-sm transition-all border flex items-center space-x-2 overflow-hidden" :class="[selectedAccount?.id === acc.id ? 'bg-[#353a47] border-gray-500 text-white' : 'bg-custom-btn border-transparent text-gray-400 hover:bg-[#2A2D3A]']">
+                        <button v-for="acc in accounts" :key="acc.id" @click="selectedAccount = acc" class="relative flex-shrink-0 px-4 py-2 rounded-xl text-sm transition-all border flex items-center space-x-2 overflow-hidden" :class="[selectedAccount?.id === acc.id ? 'bg-[#282A2C] border-gray-500 text-white' : 'bg-custom-btn border-transparent text-gray-400 hover:bg-[#1E1F22]']">
                             <i :class="acc.icon" :style="{ color: acc.color }"></i><span>{{ acc.name }}</span>
                         </button>
                     </div>
@@ -213,22 +213,13 @@
                     </div>
                     <div v-if="currentCategories.length === 0" class="text-xs text-gray-500">尚未建立分類</div>
                     <div class="flex space-x-3 overflow-x-auto no-scrollbar pb-1">
-                        <button v-for="cat in currentCategories" :key="cat.id" @click="selectedCategory = cat" class="relative flex-shrink-0 px-4 py-2 rounded-xl text-sm transition-all border flex items-center space-x-2 overflow-hidden" :class="[selectedCategory?.id === cat.id ? 'bg-[#353a47] border-gray-500 text-white' : 'bg-custom-btn border-transparent text-gray-400 hover:bg-[#2A2D3A]']">
+                        <button v-for="cat in currentCategories" :key="cat.id" @click="selectedCategory = cat" class="relative flex-shrink-0 px-4 py-2 rounded-xl text-sm transition-all border flex items-center space-x-2 overflow-hidden" :class="[selectedCategory?.id === cat.id ? 'bg-[#282A2C] border-gray-500 text-white' : 'bg-custom-btn border-transparent text-gray-400 hover:bg-[#1E1F22]']">
                             <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white mr-1" :style="{ backgroundColor: cat.color }"><i :class="cat.icon"></i></div>
                             <span>{{ cat.name }}</span>
                         </button>
                     </div>
                 </div>
             </div>
-
-            <!-- 🔥 補回進階設定開關 -->
-            <div class="flex items-center space-x-6 pt-6 mt-4 border-t border-[#353a47]">
-                <label class="flex items-center cursor-pointer space-x-2"><div class="relative"><input type="checkbox" v-model="isInstallment" class="sr-only"><div class="block w-10 h-6 rounded-full transition-colors" :class="isInstallment ? 'bg-[#FF5252]' : 'bg-gray-600'"></div><div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform" :class="isInstallment ? 'transform translate-x-4' : ''"></div></div><span class="text-sm text-gray-300">分期</span></label>
-                <label class="flex items-center cursor-pointer space-x-2"><div class="relative"><input type="checkbox" v-model="isRecurring" class="sr-only"><div class="block w-10 h-6 rounded-full transition-colors" :class="isRecurring ? 'bg-[#10AC84]' : 'bg-gray-600'"></div><div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform" :class="isRecurring ? 'transform translate-x-4' : ''"></div></div><span class="text-sm text-gray-300">週期</span></label>
-            </div>
-            
-            <div v-if="isInstallment" class="flex items-center justify-between bg-custom-btn mt-3 p-3 rounded-xl border border-custom"><span class="text-sm text-gray-300">設定分期期數</span><div class="flex items-center space-x-2"><input v-model="installmentMonths" type="number" min="2" class="w-12 bg-transparent border-b border-gray-500 text-white text-center outline-none text-sm"><span class="text-sm text-gray-400">期</span></div></div>
-            <div v-if="isRecurring" class="flex items-center justify-between bg-custom-btn mt-3 p-3 rounded-xl border border-custom"><span class="text-sm text-gray-300">設定扣款頻率</span><select v-model="recurringType" class="bg-[#232631] text-white border border-gray-600 rounded-lg px-2 py-1 text-sm outline-none"><option value="daily">每日</option><option value="weekly">每週</option><option value="monthly">每月</option><option value="yearly">每年</option></select></div>
 
             <div class="mt-6 mb-8"><div class="text-gray-400 text-sm mb-2 font-medium">#詳細備註</div><textarea v-model="memo" class="w-full h-24 rounded-xl border border-custom bg-custom-btn p-3 text-white text-sm outline-none resize-none placeholder-gray-500 focus:border-gray-400 transition-colors" placeholder="輸入備註..."></textarea></div>
 
@@ -238,9 +229,9 @@
 
 
     <!-- 4. 設定管理畫面 (Settings) -->
-    <div v-show="currentTab === 'settings'" class="flex-1 flex flex-col w-full h-full overflow-hidden bg-[#12141C]">
-        <div class="bg-[#1a1d24] sticky top-0 z-20" style="padding-top: max(env(safe-area-inset-top), 20px);">
-            <div class="relative flex justify-between items-center px-5 pt-4 pb-4 border-b border-[#353a47]">
+    <div v-show="currentTab === 'settings'" class="flex-1 flex flex-col w-full h-full overflow-hidden bg-[#0E0E0F]">
+        <div class="bg-[#131314] sticky top-0 z-20" style="padding-top: max(env(safe-area-inset-top), 20px);">
+            <div class="relative flex justify-between items-center px-5 pt-4 pb-4 border-b border-[#444746]">
                 <button @click="currentTab = 'home'" class="text-gray-400 text-xl hover:text-white p-0 m-0"><i class="fas fa-times"></i></button>
                 <h1 class="text-lg font-bold absolute left-1/2 transform -translate-x-1/2 tracking-wider">設定管理</h1>
                 <button @click="openAddSettingDirectly" class="text-gray-400 text-xl hover:text-white p-0 m-0"><i class="fas fa-plus"></i></button>
@@ -249,19 +240,19 @@
                 <button @click="settingTab = 'category'" class="flex-1 py-3 text-sm font-medium transition-colors border-b-2" :class="settingTab === 'category' ? 'text-teal-400 border-teal-400' : 'text-gray-500 border-transparent'">類別管理</button>
                 <button @click="settingTab = 'account'" class="flex-1 py-3 text-sm font-medium transition-colors border-b-2" :class="settingTab === 'account' ? 'text-teal-400 border-teal-400' : 'text-gray-500 border-transparent'">帳戶管理</button>
             </div>
-            <div v-if="settingTab === 'category'" class="flex px-4 py-2 space-x-2 bg-[#1a1d24]">
-                <button @click="settingCategoryType = 'expense'" class="px-4 py-1.5 rounded-full text-xs font-medium transition-colors" :class="settingCategoryType === 'expense' ? 'bg-[#FF5252] text-white' : 'bg-[#2A2D3A] text-gray-400'">支出</button>
-                <button @click="settingCategoryType = 'income'" class="px-4 py-1.5 rounded-full text-xs font-medium transition-colors" :class="settingCategoryType === 'income' ? 'bg-[#10AC84] text-white' : 'bg-[#2A2D3A] text-gray-400'">收入</button>
-                <button @click="settingCategoryType = 'transfer'" class="px-4 py-1.5 rounded-full text-xs font-medium transition-colors" :class="settingCategoryType === 'transfer' ? 'bg-blue-400 text-white' : 'bg-[#2A2D3A] text-gray-400'">轉帳</button>
+            <div v-if="settingTab === 'category'" class="flex px-4 py-2 space-x-2 bg-[#131314] border-b border-[#444746]/30">
+                <button @click="settingCategoryType = 'expense'" class="px-4 py-1.5 rounded-full text-xs font-medium transition-colors" :class="settingCategoryType === 'expense' ? 'bg-[#FF5252] text-white' : 'bg-[#282A2C] text-gray-400'">支出</button>
+                <button @click="settingCategoryType = 'income'" class="px-4 py-1.5 rounded-full text-xs font-medium transition-colors" :class="settingCategoryType === 'income' ? 'bg-[#10AC84] text-white' : 'bg-[#282A2C] text-gray-400'">收入</button>
+                <button @click="settingCategoryType = 'transfer'" class="px-4 py-1.5 rounded-full text-xs font-medium transition-colors" :class="settingCategoryType === 'transfer' ? 'bg-blue-400 text-white' : 'bg-[#282A2C] text-gray-400'">轉帳</button>
             </div>
         </div>
 
         <div class="flex-1 overflow-y-auto pb-32">
             <div v-if="settingTab === 'account'">
                 <div v-if="accounts.length === 0" class="text-center text-gray-500 py-10">尚無帳戶，請點擊右上角新增</div>
-                <div v-for="acc in accounts" :key="acc.id" class="flex justify-between items-center px-5 py-4 border-b border-[#353a47] active:bg-[#2A2D3A] transition-colors">
+                <div v-for="acc in accounts" :key="acc.id" class="flex justify-between items-center px-5 py-4 border-b border-[#444746]/50 active:bg-[#1E1F22] transition-colors">
                     <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shadow-md bg-[#2A2D3A]"><i :class="acc.icon" :style="{ color: acc.color }"></i></div>
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shadow-md bg-[#282A2C]"><i :class="acc.icon" :style="{ color: acc.color }"></i></div>
                         <div><p class="text-gray-200 font-medium text-base">{{ acc.name }}</p><p class="text-xs text-gray-500 mt-1">{{ acc.type }}</p></div>
                     </div>
                     <div class="flex space-x-4 text-gray-500 text-lg">
@@ -272,7 +263,7 @@
 
             <div v-if="settingTab === 'category'">
                 <div v-if="(allCategories[settingCategoryType] || []).length === 0" class="text-center text-gray-500 py-10">尚無分類，請點擊右上角新增</div>
-                <div v-for="cat in allCategories[settingCategoryType]" :key="cat.id" class="flex justify-between items-center px-5 py-4 border-b border-[#353a47] active:bg-[#2A2D3A] transition-colors">
+                <div v-for="cat in allCategories[settingCategoryType]" :key="cat.id" class="flex justify-between items-center px-5 py-4 border-b border-[#444746]/50 active:bg-[#1E1F22] transition-colors">
                     <div class="flex items-center space-x-4">
                         <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shadow-md" :style="{ backgroundColor: cat.color }"><i :class="cat.icon"></i></div>
                         <div><p class="text-gray-200 font-medium text-base">{{ cat.name }}</p><p class="text-xs text-gray-500 mt-1">{{ cat.subs?.length || 0 }} 個子類別</p></div>
@@ -287,15 +278,15 @@
 
 
     <!-- 5. 數據分析畫面 (Chart) -->
-    <div v-show="currentTab === 'chart'" class="flex-1 flex flex-col w-full h-full overflow-hidden bg-[#1a1d24]">
-        <div class="bg-[#1a1d24] sticky top-0 z-20" style="padding-top: max(env(safe-area-inset-top), 20px);">
+    <div v-show="currentTab === 'chart'" class="flex-1 flex flex-col w-full h-full overflow-hidden bg-[#131314]">
+        <div class="bg-[#131314] sticky top-0 z-20" style="padding-top: max(env(safe-area-inset-top), 20px);">
             <div class="relative flex justify-between items-center px-5 pt-4 pb-4">
                 <button @click="prevChartMonth" class="text-gray-400 text-xl hover:text-white p-0 m-0"><i class="fas fa-chevron-left"></i></button>
                 <h1 class="text-lg font-bold absolute left-1/2 transform -translate-x-1/2 tracking-wider cursor-pointer active:scale-95 transition-transform" @click="resetToToday">{{ selectedFullDate.substring(0, 7).replace('/', '年') + '月' }}</h1>
                 <button @click="nextChartMonth" class="text-gray-400 text-xl hover:text-white p-0 m-0"><i class="fas fa-chevron-right"></i></button>
             </div>
             
-            <div class="flex w-full border-b border-[#353a47]">
+            <div class="flex w-full border-b border-[#444746]">
                 <button @click="chartType = 'expense'" class="flex-1 py-3 text-sm font-medium transition-colors border-b-2" :class="chartType === 'expense' ? 'text-teal-400 border-teal-400' : 'text-gray-500 border-transparent'">支出</button>
                 <button @click="chartType = 'income'" class="flex-1 py-3 text-sm font-medium transition-colors border-b-2" :class="chartType === 'income' ? 'text-teal-400 border-teal-400' : 'text-gray-500 border-transparent'">收入</button>
             </div>
@@ -304,14 +295,14 @@
         <div class="flex-1 overflow-y-auto flex flex-col">
             <div class="py-10 flex justify-center items-center relative">
                 <div class="w-64 h-64 rounded-full flex items-center justify-center shadow-lg relative transition-all duration-500" :style="{ background: donutStyle }">
-                    <div class="w-44 h-44 rounded-full bg-[#1a1d24] flex flex-col items-center justify-center z-10 shadow-inner">
+                    <div class="w-44 h-44 rounded-full bg-[#131314] flex flex-col items-center justify-center z-10 shadow-inner">
                         <span class="text-sm text-gray-400 mb-1">總{{ chartType === 'expense' ? '支出' : '收入' }}</span>
                         <span class="text-3xl font-bold text-white">{{ chartTotalAmount.toLocaleString() }}</span>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-[#12141C] pt-6 pb-32 flex-1 rounded-t-3xl px-5">
+            <div class="bg-[#0E0E0F] pt-6 pb-32 flex-1 rounded-t-3xl px-5 border-t border-[#444746]/30">
                 <div class="flex justify-between items-center mb-4 text-sm text-gray-400 font-medium">
                     <span>分類排行</span>
                     <span>金額</span>
@@ -319,7 +310,7 @@
                 
                 <div class="space-y-4">
                     <div v-if="chartData.length === 0" class="text-center text-gray-500 py-6">本月沒有{{ chartType === 'expense' ? '支出' : '收入' }}資料</div>
-                    <div v-for="item in chartData" :key="item.name" class="flex justify-between items-center border-b border-[#353a47]/50 pb-4 last:border-0">
+                    <div v-for="item in chartData" :key="item.name" class="flex justify-between items-center border-b border-[#444746]/50 pb-4 last:border-0">
                         <div class="flex items-center space-x-4">
                             <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shadow-md" :style="{ backgroundColor: item.color }"><i :class="item.icon"></i></div>
                             <div><h4 class="text-gray-200 font-medium text-base">{{ item.name }} <span class="text-gray-500 text-xs ml-1 font-normal">{{ item.percent }}%</span></h4></div>
@@ -336,14 +327,14 @@
     </div>
 
     <!-- 底部導覽列 -->
-    <div class="bg-[#1a1d24] border-t border-[#353a47] fixed bottom-0 w-full max-w-md z-30" style="padding-bottom: max(env(safe-area-inset-bottom), 12px);">
+    <div class="bg-[#131314] border-t border-[#444746] fixed bottom-0 w-full max-w-md z-30" style="padding-bottom: max(env(safe-area-inset-bottom), 12px);">
         <div class="flex justify-between items-center px-6 h-14 relative pb-1">
             <button @click="currentTab = 'home'" class="flex flex-col items-center p-2 transition-colors" :class="currentTab === 'home' ? 'text-white' : 'text-gray-500 hover:text-gray-300'"><i class="fas fa-home text-xl"></i></button>
             <button @click="currentTab = 'wallet'" class="flex flex-col items-center p-2 transition-colors" :class="currentTab === 'wallet' ? 'text-white' : 'text-gray-500 hover:text-gray-300'"><i class="fas fa-wallet text-xl"></i></button>
             
             <div class="absolute left-1/2 transform -translate-x-1/2 -top-5">
-                <button @click="openAddForm" class="w-14 h-14 rounded-full text-white flex items-center justify-center text-2xl border-4 border-[#1a1d24] shadow-lg transition-transform active:scale-95"
-                        :class="currentTab === 'form' && formMode === 'add' ? 'bg-gray-600' : 'bg-teal-600'">
+                <button @click="openAddForm" class="w-14 h-14 rounded-full text-white flex items-center justify-center text-2xl border-4 border-[#131314] shadow-lg transition-transform active:scale-95"
+                        :class="currentTab === 'form' && formMode === 'add' ? 'bg-[#444746]' : 'bg-teal-600'">
                     <i class="fas" :class="currentTab === 'form' && formMode === 'add' ? 'fa-times' : 'fa-plus'"></i>
                 </button>
             </div>
@@ -356,16 +347,16 @@
     <!-- 設定專用 Modal -->
     <div v-if="showSettingModal" class="fixed inset-0 z-50 flex items-center justify-center max-w-md mx-auto">
         <div class="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm" @click="closeSettingModal"></div>
-        <div class="relative bg-[#232631] w-5/6 rounded-2xl p-6 border border-gray-700 max-h-[85vh] overflow-y-auto shadow-2xl">
+        <div class="relative bg-[#1E1F22] w-5/6 rounded-2xl p-6 border border-[#444746] max-h-[85vh] overflow-y-auto shadow-2xl">
             
-            <h3 class="text-lg font-bold text-white mb-5 text-center border-b border-gray-700 pb-3">
+            <h3 class="text-lg font-bold text-white mb-5 text-center border-b border-[#444746] pb-3">
                 {{ settingModalMode === 'edit' ? '編輯' : '新增' }}{{ settingModalType === 'account' ? '付款帳戶' : '消費類別' }}
             </h3>
             
             <div class="space-y-5">
                 <div>
                     <label class="block text-xs text-gray-400 mb-2">{{ settingModalType === 'account' ? '帳戶名稱' : '類別名稱' }}</label>
-                    <input v-model="tempSettingData.name" type="text" :placeholder="settingModalType === 'account' ? '例如：現金錢包' : '例如：飲食'" class="w-full bg-[#1A1C25] border border-gray-700 rounded-lg px-4 py-3 text-white outline-none focus:border-[#54A0FF] transition-colors">
+                    <input v-model="tempSettingData.name" type="text" :placeholder="settingModalType === 'account' ? '例如：現金錢包' : '例如：飲食'" class="w-full bg-[#131314] border border-[#444746] rounded-lg px-4 py-3 text-white outline-none focus:border-[#54A0FF] transition-colors">
                 </div>
                 
                 <template v-if="settingModalType === 'account'">
@@ -374,14 +365,14 @@
                         <div class="flex space-x-2">
                             <button v-for="t in ['現金帳戶', '信用卡', '電子支付']" :key="t" @click="tempSettingData.type = t"
                                     class="flex-1 py-2.5 rounded-lg text-sm transition-colors border"
-                                    :class="tempSettingData.type === t ? 'bg-[#54A0FF] border-[#54A0FF] text-white shadow-md' : 'bg-[#1A1C25] border-gray-700 text-gray-400'">
+                                    :class="tempSettingData.type === t ? 'bg-[#54A0FF] border-[#54A0FF] text-white shadow-md' : 'bg-[#131314] border-[#444746] text-gray-400'">
                                 {{ t }}
                             </button>
                         </div>
                     </div>
                     <div>
                         <label class="block text-xs text-gray-400 mb-2">目前餘額 (TWD)</label>
-                        <input v-model="tempSettingData.initialBalance" type="number" placeholder="0" class="w-full bg-[#1A1C25] border border-gray-700 rounded-lg px-4 py-3 text-white outline-none focus:border-[#54A0FF] transition-colors">
+                        <input v-model="tempSettingData.initialBalance" type="number" placeholder="0" class="w-full bg-[#131314] border border-[#444746] rounded-lg px-4 py-3 text-white outline-none focus:border-[#54A0FF] transition-colors">
                     </div>
                 </template>
                 
@@ -393,7 +384,7 @@
                                     @click="settingModalMode === 'add' ? tempSettingData.type = t.v : null"
                                     class="flex-1 py-2.5 rounded-lg text-sm transition-colors border"
                                     :class="[
-                                        tempSettingData.type === t.v ? t.c + ' text-white shadow-md' : 'bg-[#1A1C25] border-gray-700 text-gray-400',
+                                        tempSettingData.type === t.v ? t.c + ' text-white shadow-md' : 'bg-[#131314] border-[#444746] text-gray-400',
                                         settingModalMode === 'edit' ? 'opacity-50 cursor-not-allowed' : ''
                                     ]">
                                 {{ t.l }}
@@ -402,7 +393,7 @@
                     </div>
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">子分類 (用逗號分隔，選填)</label>
-                        <input v-model="tempSettingData.subsString" type="text" placeholder="例如：早餐, 午餐" class="w-full bg-[#1A1C25] border border-gray-700 rounded-lg px-3 py-2 text-white outline-none focus:border-[#54A0FF]">
+                        <input v-model="tempSettingData.subsString" type="text" placeholder="例如：早餐, 午餐" class="w-full bg-[#131314] border border-[#444746] rounded-lg px-3 py-2 text-white outline-none focus:border-[#54A0FF]">
                     </div>
                 </template>
 
@@ -418,17 +409,17 @@
 
                 <div class="pt-2">
                     <label class="block text-xs text-gray-400 mb-2">圖示</label>
-                    <div class="flex flex-wrap gap-2">
+                    <div class="grid grid-cols-5 gap-2">
                         <button v-for="ic in iconOptions" :key="ic" @click="tempSettingData.icon = ic"
-                                class="w-10 h-10 rounded-lg flex items-center justify-center text-xl transition-colors border"
-                                :class="tempSettingData.icon === ic ? 'bg-[#54A0FF] border-[#54A0FF] text-white shadow-md' : 'bg-[#1A1C25] border-gray-700 text-gray-400 hover:bg-[#353a47]'">
+                                class="h-10 rounded-lg flex items-center justify-center text-xl transition-colors border"
+                                :class="tempSettingData.icon === ic ? 'bg-[#54A0FF] border-[#54A0FF] text-white shadow-md' : 'bg-[#131314] border-[#444746] text-gray-400 hover:bg-[#282A2C]'">
                             <i :class="ic"></i>
                         </button>
                     </div>
                 </div>
             </div>
             
-            <div class="flex justify-end items-center mt-8 space-x-3 pt-4 border-t border-gray-700">
+            <div class="flex justify-end items-center mt-8 space-x-3 pt-4 border-t border-[#444746]">
                 <button v-if="settingModalMode === 'edit'" @click="deleteSettingItem" class="px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-lg mr-auto transition-colors"><i class="fas fa-trash-alt mr-1"></i>刪除</button>
                 <button @click="closeSettingModal" class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">取消</button>
                 <button @click="saveSettingItem" class="px-5 py-2 text-sm bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition-colors shadow-lg">確認儲存</button>
@@ -443,6 +434,7 @@
 
     createApp({
         setup() {
+            // API 連線設定
             const API_URL = 'https://script.google.com/macros/s/AKfycbw0tp1vywQKRyEfxkEOohsasPYHzd27DAXYtaml_PGKfTpdLe26UisDR6bS29VhzyLu/exec';
             const isLoading = ref(true); 
             
@@ -608,11 +600,11 @@
             });
             const chartTotalAmount = computed(() => chartData.value.reduce((sum, d) => sum + d.amount, 0));
             const donutStyle = computed(() => {
-                if(chartData.value.length === 0) return 'conic-gradient(#2A2D3A 0% 100%)';
+                if(chartData.value.length === 0) return 'conic-gradient(#282A2C 0% 100%)';
                 let gradient = []; let currentPercent = 0;
                 chartData.value.forEach(d => {
                     const nextPercent = currentPercent + parseFloat(d.percent);
-                    gradient.push(`${d.color} ${currentPercent}\%${nextPercent}%`);
+                    gradient.push(`${d.color} ${currentPercent}% ${nextPercent}%`);
                     currentPercent = nextPercent;
                 });
                 return `conic-gradient(${gradient.join(', ')})`;
@@ -662,12 +654,6 @@
             const transactionDate = ref(localDate.replace(/\//g, '-'));
             const transactionTime = ref(now.toTimeString().slice(0, 5));
             
-            // 🔥 重新補回遺漏的控制變數
-            const isInstallment = ref(false);
-            const installmentMonths = ref(3);
-            const isRecurring = ref(false);
-            const recurringType = ref('monthly');
-            
             const currentCategories = computed(() => allCategories.value[transactionType.value] || []);
             const selectedAccount = ref(null);
             const selectedCategory = ref(null);
@@ -681,8 +667,6 @@
                 amount.value = ''; itemName.value = ''; memo.value = '';
                 transactionDate.value = selectedFullDate.value.replace(/\//g, '-'); 
                 transactionTime.value = new Date().toTimeString().slice(0, 5);
-                isInstallment.value = false;
-                isRecurring.value = false;
                 setTransactionType('expense');
                 if(accounts.value.length > 0) selectedAccount.value = accounts.value[0];
             };
@@ -856,7 +840,6 @@
                 dailyTransactions, filteredTransactions, selectDate, showSearch, toggleSearch, searchQuery,
                 formMode, openAddForm, openTransactionEdit, executeDeleteTransaction,
                 transactionType, amount, itemName, memo, transactionDate, transactionTime,
-                isInstallment, installmentMonths, isRecurring, recurringType,
                 accounts, allCategories, currentCategories, selectedAccount, selectedCategory, setTransactionType,
                 settingTab, settingCategoryType, openAddSettingDirectly,
                 showSettingModal, settingModalMode, settingModalType, tempSettingData, colorOptions, iconOptions,
