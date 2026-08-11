@@ -105,7 +105,6 @@
         </div>
     </div>
 
-
     <!-- 2. 帳戶總覽畫面 (Wallet) -->
     <div v-show="currentTab === 'wallet'" class="flex-1 flex flex-col w-full h-full overflow-hidden bg-[#131314]">
         <div class="sticky top-0 z-20 bg-[#131314]" style="padding-top: max(env(safe-area-inset-top), 20px);">
@@ -152,7 +151,6 @@
             </div>
         </div>
     </div>
-
 
     <!-- 3. 表單畫面 (Add / Edit Transaction) -->
     <div v-show="currentTab === 'form'" class="flex-1 flex flex-col w-full h-full overflow-hidden">
@@ -339,20 +337,34 @@
     </div>
 
     <!-- 底部導覽列 -->
-    <div class="bg-[#131314] border-t border-[#444746] fixed bottom-0 w-full max-w-md z-30" style="padding-bottom: max(env(safe-area-inset-bottom), 12px);">
-        <div class="flex justify-between items-center px-6 h-14 relative pb-1">
-            <button @click="currentTab = 'home'" class="flex flex-col items-center p-2 transition-colors" :class="currentTab === 'home' ? 'text-white' : 'text-gray-500 hover:text-gray-300'"><i class="fas fa-home text-xl"></i></button>
-            <button @click="currentTab = 'wallet'" class="flex flex-col items-center p-2 transition-colors" :class="currentTab === 'wallet' ? 'text-white' : 'text-gray-500 hover:text-gray-300'"><i class="fas fa-wallet text-xl"></i></button>
+    <div class="bg-[#131314] border-t border-[#444746]/50 fixed bottom-0 w-full max-w-md z-30" style="padding-bottom: max(env(safe-area-inset-bottom), 12px);">
+        <div class="grid grid-cols-5 h-14 items-center">
             
-            <div class="absolute left-1/2 transform -translate-x-1/2 -top-5">
-                <button @click="openAddForm" class="w-14 h-14 rounded-full text-white flex items-center justify-center text-2xl border-4 border-[#131314] shadow-lg transition-transform active:scale-95"
+            <button @click="currentTab = 'home'" class="flex flex-col items-center justify-center h-full transition-colors" :class="currentTab === 'home' ? 'text-white' : 'text-gray-500 hover:text-gray-300'">
+                <i class="fas fa-home text-xl"></i>
+            </button>
+            
+            <button @click="currentTab = 'wallet'" class="flex flex-col items-center justify-center h-full transition-colors" :class="currentTab === 'wallet' ? 'text-white' : 'text-gray-500 hover:text-gray-300'">
+                <i class="fas fa-wallet text-xl"></i>
+            </button>
+            
+            <!-- 中央按鈕容器佔據正中間的 20% 寬度 -->
+            <div class="flex justify-center relative h-full">
+                <!-- 加上 border-[4px] 做出完美的挖空切割效果 -->
+                <button @click="openAddForm" class="absolute -top-5 w-14 h-14 rounded-full text-white flex items-center justify-center text-2xl transition-transform active:scale-95 border-[4px] border-[#131314]"
                         :class="currentTab === 'form' && formMode === 'add' ? 'bg-[#444746]' : 'bg-teal-600'">
                     <i class="fas" :class="currentTab === 'form' && formMode === 'add' ? 'fa-times' : 'fa-plus'"></i>
                 </button>
             </div>
             
-            <button @click="currentTab = 'chart'" class="flex flex-col items-center p-2 transition-colors" :class="currentTab === 'chart' ? 'text-white' : 'text-gray-500 hover:text-gray-300'"><i class="fas fa-chart-pie text-xl"></i></button>
-            <button @click="currentTab = 'settings'" class="flex flex-col items-center p-2 transition-colors" :class="currentTab === 'settings' ? 'text-white' : 'text-gray-500 hover:text-gray-300'"><i class="fas fa-sliders-h text-xl"></i></button>
+            <button @click="currentTab = 'chart'" class="flex flex-col items-center justify-center h-full transition-colors" :class="currentTab === 'chart' ? 'text-white' : 'text-gray-500 hover:text-gray-300'">
+                <i class="fas fa-chart-pie text-xl"></i>
+            </button>
+            
+            <button @click="currentTab = 'settings'" class="flex flex-col items-center justify-center h-full transition-colors" :class="currentTab === 'settings' ? 'text-white' : 'text-gray-500 hover:text-gray-300'">
+                <i class="fas fa-sliders-h text-xl"></i>
+            </button>
+            
         </div>
     </div>
 
@@ -446,7 +458,7 @@
 
     createApp({
         setup() {
-            // API 連線設定
+            // 1. API & Loading
             const API_URL = 'https://script.google.com/macros/s/AKfycbw0tp1vywQKRyEfxkEOohsasPYHzd27DAXYtaml_PGKfTpdLe26UisDR6bS29VhzyLu/exec';
             const isLoading = ref(true); 
             
@@ -469,12 +481,15 @@
                 }
             };
 
+            // 2. Data Stores
             const accounts = ref([]);
             const allCategories = ref({ expense: [], income: [], transfer: [] });
             const dailyTransactions = ref([]);
 
+            // 3. Global State
             const currentTab = ref('home'); 
             
+            // 4. Date & Calendar
             const getLocalDateStr = (dateObj) => {
                 const y = dateObj.getFullYear();
                 const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -550,10 +565,12 @@
                 selectedFullDate.value = getLocalDateStr(dateObj);
             };
 
+            // 5. Search
             const showSearch = ref(false);
             const searchQuery = ref('');
             const toggleSearch = () => { showSearch.value = !showSearch.value; if (!showSearch.value) searchQuery.value = ''; };
 
+            // 6. Computeds for Dashboard
             const recalculateBalances = () => {
                 accounts.value.forEach(acc => acc.balance = acc.initialBalance || 0);
                 dailyTransactions.value.forEach(tx => {
@@ -580,6 +597,8 @@
                 }
             });
 
+            // 7. Wallet
+            const walletFilter = ref('daily'); 
             const hideBalance = ref(false);
             const totalAssets = computed(() => accounts.value.filter(a => a.balance > 0).reduce((sum, a) => sum + a.balance, 0));
             const totalLiabilities = computed(() => accounts.value.filter(a => a.balance < 0).reduce((sum, a) => sum + Math.abs(a.balance), 0));
@@ -597,6 +616,7 @@
             });
             const getGroupTotal = (group) => group.reduce((sum, acc) => sum + acc.balance, 0);
 
+            // 8. Chart
             const chartType = ref('expense');
             const chartData = computed(() => {
                 const currentMonthPrefix = selectedFullDate.value.replace(/\//g, '-').substring(0, 7);
@@ -622,6 +642,7 @@
                 return `conic-gradient(${gradient.join(', ')})`;
             });
 
+            // 9. Init Data
             const initData = async () => {
                 const res = await callAPI('getData');
                 if (res && res.data) {
@@ -657,7 +678,7 @@
             };
             onMounted(initData);
 
-            // 🔥 宣告表單與所有關聯變數
+            // 10. Form
             const formMode = ref('add'); 
             const editingTransactionId = ref(null); 
             const transactionType = ref('expense');
@@ -666,8 +687,6 @@
             const memo = ref('');     
             const transactionDate = ref(localDate.replace(/\//g, '-'));
             const transactionTime = ref(now.toTimeString().slice(0, 5));
-            
-            // 🔥 在此補回遺漏的四個變數
             const isInstallment = ref(false);
             const installmentMonths = ref(3);
             const isRecurring = ref(false);
@@ -749,6 +768,7 @@
                 }
             };
 
+            // 11. Settings
             const settingTab = ref('category'); 
             const settingCategoryType = ref('expense');
             const showSettingModal = ref(false);
@@ -853,20 +873,24 @@
                 closeSettingModal();
             };
 
+            // 12. Return ALL variables used in Template
             return {
-                isLoading, currentTab, hideBalance, totalNet, totalAssets, totalLiabilities, groupedAccounts, getGroupTotal,
-                chartType, chartData, chartTotalAmount, donutStyle, currentMonthExpense, currentMonthIncome, currentMonthNet,
-                selectedFullDate, calendarDays, visibleCalendarDays, toggleCalendar, isCalendarExpanded,
-                prevPeriod, nextPeriod, prevChartMonth, nextChartMonth, resetToToday,
-                dailyTransactions, filteredTransactions, selectDate, showSearch, toggleSearch, searchQuery,
-                formMode, openAddForm, openTransactionEdit, executeDeleteTransaction,
-                transactionType, amount, itemName, memo, transactionDate, transactionTime,
+                isLoading, callAPI,
+                accounts, allCategories, dailyTransactions,
+                currentTab,
+                selectedFullDate, isCalendarExpanded, visibleCalendarDays, toggleCalendar, selectDate, resetToToday, prevPeriod, nextPeriod, prevChartMonth, nextChartMonth,
+                showSearch, searchQuery, toggleSearch,
+                currentMonthExpense, currentMonthIncome, currentMonthNet, filteredTransactions,
+                walletFilter, hideBalance, totalAssets, totalLiabilities, totalNet, groupedAccounts, getGroupTotal,
+                chartType, chartData, chartTotalAmount, donutStyle,
+                formMode, editingTransactionId, transactionType, amount, itemName, memo, transactionDate, transactionTime,
                 isInstallment, installmentMonths, isRecurring, recurringType,
-                accounts, allCategories, currentCategories, selectedAccount, selectedCategory, setTransactionType,
-                settingTab, settingCategoryType, openAddSettingDirectly,
-                showSettingModal, settingModalMode, settingModalType, tempSettingData, colorOptions, iconOptions,
-                openSettingModal, closeSettingModal, saveSettingItem, deleteSettingItem, saveTransaction
-            }
+                currentCategories, selectedAccount, selectedCategory,
+                setTransactionType, resetForm, openAddForm, openTransactionEdit, saveTransaction, executeDeleteTransaction,
+                settingTab, settingCategoryType, showSettingModal, settingModalMode, settingModalType, tempSettingData,
+                colorOptions, iconOptions,
+                openAddSettingDirectly, openSettingModal, closeSettingModal, saveSettingItem, deleteSettingItem
+            };
         }
     }).mount('#app');
 </script>
