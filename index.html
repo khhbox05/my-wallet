@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="記帳 App">
+    <meta name="apple-mobile-web-app-title" content="LiteWallet">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1a1d24">
     
-    <title>Lite Wallet</title>
+    <title>LiteWallet</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -23,6 +23,7 @@
         .bg-custom-btn { background-color: rgba(255, 255, 255, 0.03); }
         .bg-custom-btn:hover { background-color: rgba(255, 255, 255, 0.08); }
         input[type="date"], input[type="time"] { color-scheme: dark; }
+        
         .donut-chart {
             background: conic-gradient(
                 #FDCB6E 0% 51.4%, #10AC84 51.4% 64%, #FF9F43 64% 75%, 
@@ -46,14 +47,11 @@
         <div class="bg-[#1a1d24] sticky top-0 z-10" style="padding-top: max(env(safe-area-inset-top), 20px);">
             <div class="relative flex justify-between items-center px-4 pt-3 pb-4">
                 <div class="w-16"></div>
-                
-                <!-- 🔥 新增：左右箭頭切換日期，點擊文字回到今天 -->
                 <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-3">
                     <button @click="prevPeriod" class="text-gray-400 p-2 hover:text-white transition-colors"><i class="fas fa-chevron-left text-sm"></i></button>
                     <h1 class="text-lg font-bold tracking-wider cursor-pointer active:scale-95 transition-transform" @click="resetToToday">{{ selectedFullDate }}</h1>
                     <button @click="nextPeriod" class="text-gray-400 p-2 hover:text-white transition-colors"><i class="fas fa-chevron-right text-sm"></i></button>
                 </div>
-                
                 <div class="flex space-x-3 w-16 justify-end">
                     <button @click="toggleCalendar" class="text-gray-400 text-lg hover:text-white transition-colors"><i class="fas" :class="isCalendarExpanded ? 'fa-compress' : 'fa-expand'"></i></button>
                     <button @click="toggleSearch" class="text-gray-400 text-lg hover:text-white transition-colors"><i class="fas" :class="showSearch ? 'fa-times' : 'fa-search'"></i></button>
@@ -124,6 +122,7 @@
                     <span>總負債 <span class="ml-1" :class="hideBalance ? 'text-gray-500' : 'text-[#FF5252]'">{{ hideBalance ? '***' : totalLiabilities.toLocaleString() }}</span></span>
                 </div>
             </div>
+
             <div class="flex justify-center text-sm text-gray-300 mb-6">
                 <button class="flex items-center hover:text-white border-b border-gray-500 pb-0.5"><i class="fas fa-chart-pie mr-2 text-gray-400"></i>各分組佔比</button>
             </div>
@@ -199,7 +198,6 @@
                         <span class="text-xs text-gray-400">付款帳戶</span>
                         <button @click="currentTab = 'settings'; settingTab = 'account'" class="text-xs px-2 py-1 text-gray-400 bg-custom-btn rounded hover:text-white transition-colors">管理</button>
                     </div>
-                    <!-- 若無帳戶防呆 -->
                     <div v-if="accounts.length === 0" class="text-xs text-gray-500">尚未建立帳戶</div>
                     <div class="flex space-x-3 overflow-x-auto no-scrollbar pb-1">
                         <button v-for="acc in accounts" :key="acc.id" @click="selectedAccount = acc" class="relative flex-shrink-0 px-4 py-2 rounded-xl text-sm transition-all border flex items-center space-x-2 overflow-hidden" :class="[selectedAccount?.id === acc.id ? 'bg-[#353a47] border-gray-500 text-white' : 'bg-custom-btn border-transparent text-gray-400 hover:bg-[#2A2D3A]']">
@@ -283,7 +281,6 @@
     <div v-show="currentTab === 'chart'" class="flex-1 flex flex-col w-full h-full overflow-hidden bg-[#1a1d24]">
         <div class="bg-[#1a1d24] sticky top-0 z-20" style="padding-top: max(env(safe-area-inset-top), 20px);">
             <div class="relative flex justify-between items-center px-5 pt-4 pb-4">
-                <!-- 🔥 新增：左右箭頭切換圖表月份 -->
                 <button @click="prevChartMonth" class="text-gray-400 text-xl hover:text-white p-0 m-0"><i class="fas fa-chevron-left"></i></button>
                 <h1 class="text-lg font-bold absolute left-1/2 transform -translate-x-1/2 tracking-wider cursor-pointer active:scale-95 transition-transform" @click="resetToToday">{{ selectedFullDate.substring(0, 7).replace('/', '年') + '月' }}</h1>
                 <button @click="nextChartMonth" class="text-gray-400 text-xl hover:text-white p-0 m-0"><i class="fas fa-chevron-right"></i></button>
@@ -313,7 +310,6 @@
                 
                 <div class="space-y-4">
                     <div v-if="chartData.length === 0" class="text-center text-gray-500 py-6">本月沒有{{ chartType === 'expense' ? '支出' : '收入' }}資料</div>
-                    
                     <div v-for="item in chartData" :key="item.name" class="flex justify-between items-center border-b border-[#353a47]/50 pb-4 last:border-0">
                         <div class="flex items-center space-x-4">
                             <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shadow-md" :style="{ backgroundColor: item.color }"><i :class="item.icon"></i></div>
@@ -330,9 +326,8 @@
         </div>
     </div>
 
-
     <!-- ========================================== -->
-    <!-- 🔥 瘦身後的底部導覽列 -->
+    <!-- 瘦身後的底部導覽列 -->
     <!-- ========================================== -->
     <div class="bg-[#1a1d24] border-t border-[#353a47] fixed bottom-0 w-full max-w-md z-30" style="padding-bottom: max(env(safe-area-inset-bottom), 12px);">
         <div class="flex justify-between items-center px-6 h-14 relative pb-1">
@@ -355,9 +350,11 @@
     <div v-if="showSettingModal" class="fixed inset-0 z-50 flex items-center justify-center max-w-md mx-auto">
         <div class="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm" @click="closeSettingModal"></div>
         <div class="relative bg-[#232631] w-5/6 rounded-2xl p-6 border border-gray-700 max-h-[85vh] overflow-y-auto shadow-2xl">
+            
             <h3 class="text-lg font-bold text-white mb-5 text-center border-b border-gray-700 pb-3">
                 {{ settingModalMode === 'edit' ? '編輯' : '新增' }}{{ settingModalType === 'account' ? '付款帳戶' : '消費類別' }}
             </h3>
+            
             <div class="space-y-5">
                 <div>
                     <label class="block text-xs text-gray-400 mb-2">{{ settingModalType === 'account' ? '帳戶名稱' : '類別名稱' }}</label>
@@ -388,10 +385,14 @@
                             <button v-for="t in [{l:'支出', v:'expense', c:'bg-[#FF5252] border-[#FF5252]'}, {l:'收入', v:'income', c:'bg-[#10AC84] border-[#10AC84]'}, {l:'轉帳', v:'transfer', c:'bg-blue-400 border-blue-400'}]" :key="t.v"
                                     @click="settingModalMode === 'add' ? tempSettingData.type = t.v : null"
                                     class="flex-1 py-2.5 rounded-lg text-sm transition-colors border"
-                                    :class="[tempSettingData.type === t.v ? t.c + ' text-white shadow-md' : 'bg-[#1A1C25] border-gray-700 text-gray-400', settingModalMode === 'edit' ? 'opacity-50 cursor-not-allowed' : '']">
+                                    :class="[
+                                        tempSettingData.type === t.v ? t.c + ' text-white shadow-md' : 'bg-[#1A1C25] border-gray-700 text-gray-400',
+                                        settingModalMode === 'edit' ? 'opacity-50 cursor-not-allowed' : ''
+                                    ]">
                                 {{ t.l }}
                             </button>
                         </div>
+                        <p v-if="settingModalMode === 'edit'" class="text-[10px] text-gray-500 mt-1 text-center">編輯模式無法更改收支屬性</p>
                     </div>
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">子分類 (用逗號分隔，選填)</label>
@@ -409,11 +410,11 @@
                     </div>
                 </div>
 
-                <div class="pt-2">
-                    <label class="block text-xs text-gray-400 mb-2">圖示</label>
-                    <div class="flex flex-wrap gap-2">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-2">代表圖示</label>
+                    <div class="grid grid-cols-5 gap-2">
                         <button v-for="ic in iconOptions" :key="ic" @click="tempSettingData.icon = ic"
-                                class="w-10 h-10 rounded-lg flex items-center justify-center text-xl transition-colors border"
+                                class="h-10 rounded-lg flex items-center justify-center text-xl transition-colors border"
                                 :class="tempSettingData.icon === ic ? 'bg-[#54A0FF] border-[#54A0FF] text-white shadow-md' : 'bg-[#1A1C25] border-gray-700 text-gray-400 hover:bg-[#353a47]'">
                             <i :class="ic"></i>
                         </button>
@@ -436,9 +437,11 @@
 
     createApp({
         setup() {
+            // ==========================================
             // API 連線設定
+            // ==========================================
             const API_URL = 'https://script.google.com/macros/s/AKfycbw0tp1vywQKRyEfxkEOohsasPYHzd27DAXYtaml_PGKfTpdLe26UisDR6bS29VhzyLu/exec';
-            const isLoading = ref(true);
+            const isLoading = ref(true); 
             
             const callAPI = async (action, data = {}) => {
                 isLoading.value = true;
@@ -453,48 +456,25 @@
                     return result;
                 } catch (error) {
                     alert('雲端連線發生錯誤：' + error.message);
+                    console.error(error);
                     return null;
                 } finally {
                     isLoading.value = false;
                 }
             };
 
+            // ==========================================
+            // 資料儲存容器
+            // ==========================================
             const accounts = ref([]);
             const allCategories = ref({ expense: [], income: [], transfer: [] });
             const dailyTransactions = ref([]);
 
-            const initData = async () => {
-                const res = await callAPI('getData');
-                if (res && res.data) {
-                    accounts.value = res.data.accounts.map(a => ({ ...a, initialBalance: Number(a.initialBalance) || 0, balance: Number(a.initialBalance) || 0 }));
-                    if (accounts.value.length === 0) accounts.value.push({ id: 'acc_def', name: '現金錢包', type: '現金帳戶', icon: 'fas fa-wallet', color: '#10AC84', initialBalance: 0, balance: 0 });
-
-                    const parsedCategories = { expense: [], income: [], transfer: [] };
-                    res.data.categories.forEach(c => {
-                        c.subs = c.subs ? String(c.subs).split(',').map(s=>s.trim()).filter(s=>s) : [];
-                        if(parsedCategories[c.type]) parsedCategories[c.type].push(c);
-                    });
-                    
-                    if (parsedCategories.expense.length === 0) parsedCategories.expense.push({ id: 'cat_e', name: '一般花費', icon: 'fas fa-shopping-bag', color: '#FF9F43', subs: [] });
-                    if (parsedCategories.income.length === 0) parsedCategories.income.push({ id: 'cat_i', name: '一般收入', icon: 'fas fa-sack-dollar', color: '#10AC84', subs: [] });
-                    if (parsedCategories.transfer.length === 0) parsedCategories.transfer.push({ id: 'cat_t', name: '一般轉帳', icon: 'fas fa-exchange-alt', color: '#54A0FF', subs: [] });
-                    
-                    allCategories.value = parsedCategories;
-
-                    dailyTransactions.value = res.data.transactions.map(t => ({ ...t, numAmount: Number(t.numAmount) || 0 }))
-                        .sort((a, b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
-
-                    recalculateBalances();
-                }
-            };
-            onMounted(initData);
-
             // ==========================================
-            // 🔥 日期生成與安全轉換 (解決跨越時區Bug)
+            // 日期與畫面狀態
             // ==========================================
             const currentTab = ref('home'); 
             
-            // 安全的格式化函數 YYYY/MM/DD
             const getLocalDateStr = (dateObj) => {
                 const y = dateObj.getFullYear();
                 const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -505,10 +485,8 @@
             const now = new Date();
             const localDate = getLocalDateStr(now);
             const selectedFullDate = ref(localDate); 
-            
             const isCalendarExpanded = ref(false);
 
-            // 🔥 動態根據選擇的日期計算日曆範圍
             const visibleCalendarDays = computed(() => {
                 const days = [];
                 const [sy, sm, sd] = selectedFullDate.value.split('/');
@@ -544,7 +522,6 @@
             const selectDate = (clickedDay) => { selectedFullDate.value = clickedDay.fullDate; };
             const resetToToday = () => { selectedFullDate.value = localDate; };
             
-            // 🔥 新增：日曆前後切換時間邏輯
             const prevPeriod = () => {
                 const [y, m, d] = selectedFullDate.value.split('/');
                 const dateObj = new Date(y, m - 1, d);
@@ -577,6 +554,9 @@
             const searchQuery = ref('');
             const toggleSearch = () => { showSearch.value = !showSearch.value; if (!showSearch.value) searchQuery.value = ''; };
 
+            // ==========================================
+            // 餘額與統計計算
+            // ==========================================
             const recalculateBalances = () => {
                 accounts.value.forEach(acc => acc.balance = acc.initialBalance || 0);
                 dailyTransactions.value.forEach(tx => {
@@ -603,8 +583,7 @@
                 }
             });
 
-
-            // Wallet
+            // Wallet 變數
             const hideBalance = ref(false);
             const totalAssets = computed(() => accounts.value.filter(a => a.balance > 0).reduce((sum, a) => sum + a.balance, 0));
             const totalLiabilities = computed(() => accounts.value.filter(a => a.balance < 0).reduce((sum, a) => sum + Math.abs(a.balance), 0));
@@ -622,7 +601,7 @@
             });
             const getGroupTotal = (group) => group.reduce((sum, acc) => sum + acc.balance, 0);
 
-            // Chart
+            // Chart 變數
             const chartType = ref('expense');
             const chartData = computed(() => {
                 const currentMonthPrefix = selectedFullDate.value.replace(/\//g, '-').substring(0, 7);
@@ -648,7 +627,47 @@
                 return `conic-gradient(${gradient.join(', ')})`;
             });
 
-            // Form
+            // ==========================================
+            // 初始化載入資料
+            // ==========================================
+            const initData = async () => {
+                const res = await callAPI('getData');
+                if (res && res.data) {
+                    accounts.value = res.data.accounts.map(a => ({
+                        ...a,
+                        initialBalance: Number(a.initialBalance) || 0,
+                        balance: Number(a.initialBalance) || 0
+                    }));
+
+                    if (accounts.value.length === 0) {
+                        accounts.value.push({ id: 'acc_default', name: '現金錢包', type: '現金帳戶', icon: 'fas fa-wallet', color: '#10AC84', initialBalance: 0, balance: 0 });
+                    }
+
+                    const parsedCategories = { expense: [], income: [], transfer: [] };
+                    res.data.categories.forEach(c => {
+                        c.subs = c.subs ? String(c.subs).split(',').map(s=>s.trim()).filter(s=>s) : [];
+                        if(parsedCategories[c.type]) parsedCategories[c.type].push(c);
+                    });
+                    
+                    if (parsedCategories.expense.length === 0) parsedCategories.expense.push({ id: 'cat_e_def', name: '一般花費', icon: 'fas fa-shopping-bag', color: '#FF9F43', subs: [] });
+                    if (parsedCategories.income.length === 0) parsedCategories.income.push({ id: 'cat_i_def', name: '一般收入', icon: 'fas fa-sack-dollar', color: '#10AC84', subs: [] });
+                    if (parsedCategories.transfer.length === 0) parsedCategories.transfer.push({ id: 'cat_t_def', name: '一般轉帳', icon: 'fas fa-exchange-alt', color: '#54A0FF', subs: [] });
+                    
+                    allCategories.value = parsedCategories;
+
+                    dailyTransactions.value = res.data.transactions.map(t => ({
+                        ...t,
+                        numAmount: Number(t.numAmount) || 0
+                    })).sort((a, b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
+
+                    recalculateBalances();
+                }
+            };
+            onMounted(initData);
+
+            // ==========================================
+            // 表單 (Add / Edit)
+            // ==========================================
             const formMode = ref('add'); 
             const editingTransactionId = ref(null); 
             const transactionType = ref('expense');
@@ -657,6 +676,10 @@
             const memo = ref('');     
             const transactionDate = ref(localDate.replace(/\//g, '-'));
             const transactionTime = ref(now.toTimeString().slice(0, 5));
+            const isInstallment = ref(false);
+            const installmentMonths = ref(3);
+            const isRecurring = ref(false);
+            const recurringType = ref('monthly');
             
             const currentCategories = computed(() => allCategories.value[transactionType.value] || []);
             const selectedAccount = ref(null);
@@ -698,9 +721,16 @@
                 
                 const txData = { 
                     id: formMode.value === 'add' ? 'tx_' + Date.now() : editingTransactionId.value, 
-                    date: transactionDate.value, time: transactionTime.value, type: transactionType.value, 
-                    accountId: selectedAccount.value.id, categoryName: cat.name, name: itemName.value || cat.name, 
-                    memo: memo.value, numAmount: numAmt, icon: cat.icon, color: cat.color 
+                    date: transactionDate.value, 
+                    time: transactionTime.value, 
+                    type: transactionType.value, 
+                    accountId: selectedAccount.value.id, 
+                    categoryName: cat.name, 
+                    name: itemName.value || cat.name, 
+                    memo: memo.value, 
+                    numAmount: numAmt, 
+                    icon: cat.icon, 
+                    color: cat.color 
                 };
 
                 const res = await callAPI('saveTransaction', txData);
@@ -725,7 +755,9 @@
                 }
             };
 
-            // Settings
+            // ==========================================
+            // 設定管理 Settings
+            // ==========================================
             const settingTab = ref('category'); 
             const settingCategoryType = ref('expense');
             const showSettingModal = ref(false);
@@ -740,12 +772,22 @@
             const openAddSettingDirectly = () => { openSettingModal(settingTab.value, null, 'add'); };
 
             const openSettingModal = (type, item, mode) => {
-                settingModalMode.value = mode; settingModalType.value = type;
+                settingModalMode.value = mode; 
+                settingModalType.value = type;
                 if (mode === 'edit') {
                     editingSettingId = item.id;
-                    tempSettingData.value = { name: item.name, type: type === 'account' ? item.type : settingCategoryType.value, icon: item.icon, color: item.color, initialBalance: type === 'account' ? item.initialBalance : 0, subsString: type === 'category' && item.subs ? item.subs.join(', ') : '' };
+                    tempSettingData.value = { 
+                        name: item.name, 
+                        type: type === 'account' ? item.type : settingCategoryType.value,
+                        icon: item.icon, 
+                        color: item.color, 
+                        initialBalance: type === 'account' ? item.initialBalance : 0,
+                        subsString: type === 'category' && item.subs ? item.subs.join(', ') : ''
+                    };
                 } else {
-                    tempSettingData.value = type === 'account' ? { name: '', type: '現金帳戶', icon: 'fas fa-wallet', color: colorOptions[3], initialBalance: '' } : { name: '', type: settingCategoryType.value, icon: 'fas fa-star', color: colorOptions[1], subsString: '' };
+                    tempSettingData.value = type === 'account' 
+                        ? { name: '', type: '現金帳戶', icon: 'fas fa-wallet', color: colorOptions[3], initialBalance: '' } 
+                        : { name: '', type: settingCategoryType.value, icon: 'fas fa-star', color: colorOptions[1], subsString: '' };
                 }
                 showSettingModal.value = true;
             };
@@ -754,29 +796,45 @@
 
             const saveSettingItem = async () => {
                 if (!tempSettingData.value.name.trim()) return alert('請輸入名稱');
-                const finalIcon = tempSettingData.value.icon; const finalColor = tempSettingData.value.color;
+                
+                const finalIcon = tempSettingData.value.icon;
+                const finalColor = tempSettingData.value.color;
 
                 if (settingModalType.value === 'account') {
                     const bal = parseInt(tempSettingData.value.initialBalance) || 0;
-                    const accData = { id: settingModalMode.value === 'add' ? 'acc_' + Date.now() : editingSettingId, name: tempSettingData.value.name, type: tempSettingData.value.type, icon: finalIcon, color: finalColor, initialBalance: bal };
+                    const accData = { 
+                        id: settingModalMode.value === 'add' ? 'acc_' + Date.now() : editingSettingId, 
+                        name: tempSettingData.value.name, type: tempSettingData.value.type, 
+                        icon: finalIcon, color: finalColor, initialBalance: bal 
+                    };
+                    
                     const res = await callAPI('saveAccount', accData);
                     if(res) {
                         accData.balance = bal; 
                         if (settingModalMode.value === 'add') { accounts.value.push(accData); } 
                         else {
                             const idx = accounts.value.findIndex(a => a.id === editingSettingId);
-                            if(idx !== -1) { accounts.value[idx].name = accData.name; accounts.value[idx].type = accData.type; accounts.value[idx].icon = accData.icon; accounts.value[idx].color = accData.color; const diff = bal - accounts.value[idx].initialBalance; accounts.value[idx].initialBalance = bal; accounts.value[idx].balance += diff; }
+                            if(idx !== -1) accounts.value[idx] = accData;
                         }
                         recalculateBalances();
                     }
                 } else if (settingModalType.value === 'category') {
                     const finalSubsString = tempSettingData.value.subsString ? tempSettingData.value.subsString.trim() : '';
-                    const catData = { id: settingModalMode.value === 'add' ? 'cat_' + Date.now() : editingSettingId, name: tempSettingData.value.name, type: tempSettingData.value.type, icon: finalIcon, color: finalColor, subs: finalSubsString };
+                    const catData = { 
+                        id: settingModalMode.value === 'add' ? 'cat_' + Date.now() : editingSettingId, 
+                        name: tempSettingData.value.name, type: tempSettingData.value.type, 
+                        icon: finalIcon, color: finalColor, subs: finalSubsString 
+                    };
+                    
                     const res = await callAPI('saveCategory', catData);
                     if(res) {
                         catData.subs = finalSubsString ? finalSubsString.split(',').map(s => s.trim()).filter(s => s) : [];
                         if (settingModalMode.value === 'add') { allCategories.value[tempSettingData.value.type].push(catData); } 
-                        else { const list = allCategories.value[tempSettingData.value.type]; const idx = list.findIndex(c => c.id === editingSettingId); if(idx !== -1) list[idx] = catData; }
+                        else {
+                            const list = allCategories.value[tempSettingData.value.type];
+                            const idx = list.findIndex(c => c.id === editingSettingId);
+                            if(idx !== -1) list[idx] = catData;
+                        }
                     }
                 }
                 closeSettingModal();
@@ -784,15 +842,22 @@
 
             const deleteSettingItem = async () => {
                 if(!confirm(`確定要刪除「${tempSettingData.value.name}」嗎？`)) return;
+                
                 if (settingModalType.value === 'account') {
                     if (accounts.value.length <= 1) return alert('必須保留至少一個付款方式！');
                     const res = await callAPI('deleteAccount', { id: editingSettingId });
-                    if(res) { accounts.value = accounts.value.filter(a => a.id !== editingSettingId); if (selectedAccount.value?.id === editingSettingId) selectedAccount.value = accounts.value[0]; }
+                    if(res) {
+                        accounts.value = accounts.value.filter(a => a.id !== editingSettingId);
+                        if (selectedAccount.value?.id === editingSettingId) selectedAccount.value = accounts.value[0];
+                    }
                 } else if (settingModalType.value === 'category') {
                     const list = allCategories.value[tempSettingData.value.type];
                     if (list.length <= 1) return alert('該屬性必須保留至少一個分類！');
                     const res = await callAPI('deleteCategory', { id: editingSettingId });
-                    if(res) { allCategories.value[tempSettingData.value.type] = list.filter(c => c.id !== editingSettingId); if (selectedCategory.value?.id === editingSettingId) selectedCategory.value = allCategories.value[tempSettingData.value.type][0]; }
+                    if(res) {
+                        allCategories.value[tempSettingData.value.type] = list.filter(c => c.id !== editingSettingId);
+                        if (selectedCategory.value?.id === editingSettingId) selectedCategory.value = allCategories.value[tempSettingData.value.type][0];
+                    }
                 }
                 closeSettingModal();
             };
@@ -805,6 +870,7 @@
                 dailyTransactions, filteredTransactions, selectDate, showSearch, toggleSearch, searchQuery,
                 formMode, openAddForm, openTransactionEdit, executeDeleteTransaction,
                 transactionType, amount, itemName, memo, transactionDate, transactionTime,
+                isInstallment, installmentMonths, isRecurring, recurringType,
                 accounts, allCategories, currentCategories, selectedAccount, selectedCategory, setTransactionType,
                 settingTab, settingCategoryType, openAddSettingDirectly,
                 showSettingModal, settingModalMode, settingModalType, tempSettingData, colorOptions, iconOptions,
