@@ -221,6 +221,15 @@
                 </div>
             </div>
 
+            <!-- 🔥 補回進階設定開關 -->
+            <div class="flex items-center space-x-6 pt-6 mt-4 border-t border-[#353a47]">
+                <label class="flex items-center cursor-pointer space-x-2"><div class="relative"><input type="checkbox" v-model="isInstallment" class="sr-only"><div class="block w-10 h-6 rounded-full transition-colors" :class="isInstallment ? 'bg-[#FF5252]' : 'bg-gray-600'"></div><div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform" :class="isInstallment ? 'transform translate-x-4' : ''"></div></div><span class="text-sm text-gray-300">分期</span></label>
+                <label class="flex items-center cursor-pointer space-x-2"><div class="relative"><input type="checkbox" v-model="isRecurring" class="sr-only"><div class="block w-10 h-6 rounded-full transition-colors" :class="isRecurring ? 'bg-[#10AC84]' : 'bg-gray-600'"></div><div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform" :class="isRecurring ? 'transform translate-x-4' : ''"></div></div><span class="text-sm text-gray-300">週期</span></label>
+            </div>
+            
+            <div v-if="isInstallment" class="flex items-center justify-between bg-custom-btn mt-3 p-3 rounded-xl border border-custom"><span class="text-sm text-gray-300">設定分期期數</span><div class="flex items-center space-x-2"><input v-model="installmentMonths" type="number" min="2" class="w-12 bg-transparent border-b border-gray-500 text-white text-center outline-none text-sm"><span class="text-sm text-gray-400">期</span></div></div>
+            <div v-if="isRecurring" class="flex items-center justify-between bg-custom-btn mt-3 p-3 rounded-xl border border-custom"><span class="text-sm text-gray-300">設定扣款頻率</span><select v-model="recurringType" class="bg-[#232631] text-white border border-gray-600 rounded-lg px-2 py-1 text-sm outline-none"><option value="daily">每日</option><option value="weekly">每週</option><option value="monthly">每月</option><option value="yearly">每年</option></select></div>
+
             <div class="mt-6 mb-8"><div class="text-gray-400 text-sm mb-2 font-medium">#詳細備註</div><textarea v-model="memo" class="w-full h-24 rounded-xl border border-custom bg-custom-btn p-3 text-white text-sm outline-none resize-none placeholder-gray-500 focus:border-gray-400 transition-colors" placeholder="輸入備註..."></textarea></div>
 
             <button v-if="formMode === 'edit'" @click="executeDeleteTransaction" class="w-full py-4 rounded-xl border border-red-500/30 bg-red-500/10 text-red-500 font-bold hover:bg-red-500/20 transition-colors flex items-center justify-center mb-8"><i class="fas fa-trash-alt mr-2"></i> 刪除此筆記錄</button>
@@ -326,9 +335,7 @@
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- 瘦身後的底部導覽列 -->
-    <!-- ========================================== -->
+    <!-- 底部導覽列 -->
     <div class="bg-[#1a1d24] border-t border-[#353a47] fixed bottom-0 w-full max-w-md z-30" style="padding-bottom: max(env(safe-area-inset-bottom), 12px);">
         <div class="flex justify-between items-center px-6 h-14 relative pb-1">
             <button @click="currentTab = 'home'" class="flex flex-col items-center p-2 transition-colors" :class="currentTab === 'home' ? 'text-white' : 'text-gray-500 hover:text-gray-300'"><i class="fas fa-home text-xl"></i></button>
@@ -392,7 +399,6 @@
                                 {{ t.l }}
                             </button>
                         </div>
-                        <p v-if="settingModalMode === 'edit'" class="text-[10px] text-gray-500 mt-1 text-center">編輯模式無法更改收支屬性</p>
                     </div>
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">子分類 (用逗號分隔，選填)</label>
@@ -410,11 +416,11 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs text-gray-400 mb-2">代表圖示</label>
-                    <div class="grid grid-cols-5 gap-2">
+                <div class="pt-2">
+                    <label class="block text-xs text-gray-400 mb-2">圖示</label>
+                    <div class="flex flex-wrap gap-2">
                         <button v-for="ic in iconOptions" :key="ic" @click="tempSettingData.icon = ic"
-                                class="h-10 rounded-lg flex items-center justify-center text-xl transition-colors border"
+                                class="w-10 h-10 rounded-lg flex items-center justify-center text-xl transition-colors border"
                                 :class="tempSettingData.icon === ic ? 'bg-[#54A0FF] border-[#54A0FF] text-white shadow-md' : 'bg-[#1A1C25] border-gray-700 text-gray-400 hover:bg-[#353a47]'">
                             <i :class="ic"></i>
                         </button>
@@ -437,9 +443,6 @@
 
     createApp({
         setup() {
-            // ==========================================
-            // API 連線設定
-            // ==========================================
             const API_URL = 'https://script.google.com/macros/s/AKfycbw0tp1vywQKRyEfxkEOohsasPYHzd27DAXYtaml_PGKfTpdLe26UisDR6bS29VhzyLu/exec';
             const isLoading = ref(true); 
             
@@ -456,23 +459,16 @@
                     return result;
                 } catch (error) {
                     alert('雲端連線發生錯誤：' + error.message);
-                    console.error(error);
                     return null;
                 } finally {
                     isLoading.value = false;
                 }
             };
 
-            // ==========================================
-            // 資料儲存容器
-            // ==========================================
             const accounts = ref([]);
             const allCategories = ref({ expense: [], income: [], transfer: [] });
             const dailyTransactions = ref([]);
 
-            // ==========================================
-            // 日期與畫面狀態
-            // ==========================================
             const currentTab = ref('home'); 
             
             const getLocalDateStr = (dateObj) => {
@@ -554,9 +550,6 @@
             const searchQuery = ref('');
             const toggleSearch = () => { showSearch.value = !showSearch.value; if (!showSearch.value) searchQuery.value = ''; };
 
-            // ==========================================
-            // 餘額與統計計算
-            // ==========================================
             const recalculateBalances = () => {
                 accounts.value.forEach(acc => acc.balance = acc.initialBalance || 0);
                 dailyTransactions.value.forEach(tx => {
@@ -583,7 +576,6 @@
                 }
             });
 
-            // Wallet 變數
             const hideBalance = ref(false);
             const totalAssets = computed(() => accounts.value.filter(a => a.balance > 0).reduce((sum, a) => sum + a.balance, 0));
             const totalLiabilities = computed(() => accounts.value.filter(a => a.balance < 0).reduce((sum, a) => sum + Math.abs(a.balance), 0));
@@ -601,7 +593,6 @@
             });
             const getGroupTotal = (group) => group.reduce((sum, acc) => sum + acc.balance, 0);
 
-            // Chart 變數
             const chartType = ref('expense');
             const chartData = computed(() => {
                 const currentMonthPrefix = selectedFullDate.value.replace(/\//g, '-').substring(0, 7);
@@ -621,15 +612,12 @@
                 let gradient = []; let currentPercent = 0;
                 chartData.value.forEach(d => {
                     const nextPercent = currentPercent + parseFloat(d.percent);
-                    gradient.push(`${d.color} ${currentPercent}% ${nextPercent}%`);
+                    gradient.push(`${d.color} ${currentPercent}\%${nextPercent}%`);
                     currentPercent = nextPercent;
                 });
                 return `conic-gradient(${gradient.join(', ')})`;
             });
 
-            // ==========================================
-            // 初始化載入資料
-            // ==========================================
             const initData = async () => {
                 const res = await callAPI('getData');
                 if (res && res.data) {
@@ -665,9 +653,6 @@
             };
             onMounted(initData);
 
-            // ==========================================
-            // 表單 (Add / Edit)
-            // ==========================================
             const formMode = ref('add'); 
             const editingTransactionId = ref(null); 
             const transactionType = ref('expense');
@@ -676,6 +661,8 @@
             const memo = ref('');     
             const transactionDate = ref(localDate.replace(/\//g, '-'));
             const transactionTime = ref(now.toTimeString().slice(0, 5));
+            
+            // 🔥 重新補回遺漏的控制變數
             const isInstallment = ref(false);
             const installmentMonths = ref(3);
             const isRecurring = ref(false);
@@ -694,6 +681,8 @@
                 amount.value = ''; itemName.value = ''; memo.value = '';
                 transactionDate.value = selectedFullDate.value.replace(/\//g, '-'); 
                 transactionTime.value = new Date().toTimeString().slice(0, 5);
+                isInstallment.value = false;
+                isRecurring.value = false;
                 setTransactionType('expense');
                 if(accounts.value.length > 0) selectedAccount.value = accounts.value[0];
             };
@@ -755,9 +744,6 @@
                 }
             };
 
-            // ==========================================
-            // 設定管理 Settings
-            // ==========================================
             const settingTab = ref('category'); 
             const settingCategoryType = ref('expense');
             const showSettingModal = ref(false);
