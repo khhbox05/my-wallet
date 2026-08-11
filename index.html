@@ -9,7 +9,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1a1d24">
     
-    <title>My Wallet</title>
+    <title>記帳 Web App - 動態日曆與瘦身版</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -44,10 +44,17 @@
     <!-- 1. 總覽主畫面 (Dashboard) -->
     <div v-show="currentTab === 'home'" class="flex-1 flex flex-col w-full h-full overflow-y-auto">
         <div class="bg-[#1a1d24] sticky top-0 z-10" style="padding-top: max(env(safe-area-inset-top), 20px);">
-            <div class="relative flex justify-between items-center px-5 pt-3 pb-4">
+            <div class="relative flex justify-between items-center px-4 pt-3 pb-4">
                 <div class="w-16"></div>
-                <h1 class="text-lg font-bold absolute left-1/2 transform -translate-x-1/2 tracking-wider">{{ selectedFullDate }}</h1>
-                <div class="flex space-x-5 w-16 justify-end">
+                
+                <!-- 🔥 新增：左右箭頭切換日期，點擊文字回到今天 -->
+                <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-3">
+                    <button @click="prevPeriod" class="text-gray-400 p-2 hover:text-white transition-colors"><i class="fas fa-chevron-left text-sm"></i></button>
+                    <h1 class="text-lg font-bold tracking-wider cursor-pointer active:scale-95 transition-transform" @click="resetToToday">{{ selectedFullDate }}</h1>
+                    <button @click="nextPeriod" class="text-gray-400 p-2 hover:text-white transition-colors"><i class="fas fa-chevron-right text-sm"></i></button>
+                </div>
+                
+                <div class="flex space-x-3 w-16 justify-end">
                     <button @click="toggleCalendar" class="text-gray-400 text-lg hover:text-white transition-colors"><i class="fas" :class="isCalendarExpanded ? 'fa-compress' : 'fa-expand'"></i></button>
                     <button @click="toggleSearch" class="text-gray-400 text-lg hover:text-white transition-colors"><i class="fas" :class="showSearch ? 'fa-times' : 'fa-search'"></i></button>
                 </div>
@@ -276,9 +283,10 @@
     <div v-show="currentTab === 'chart'" class="flex-1 flex flex-col w-full h-full overflow-hidden bg-[#1a1d24]">
         <div class="bg-[#1a1d24] sticky top-0 z-20" style="padding-top: max(env(safe-area-inset-top), 20px);">
             <div class="relative flex justify-between items-center px-5 pt-4 pb-4">
-                <button class="text-gray-400 text-xl hover:text-white p-0 m-0"><i class="fas fa-chevron-left"></i></button>
-                <h1 class="text-lg font-bold absolute left-1/2 transform -translate-x-1/2 tracking-wider">{{ selectedFullDate.substring(0, 7).replace('/', '年') + '月' }}</h1>
-                <button class="text-gray-400 text-xl hover:text-white p-0 m-0"><i class="fas fa-chevron-right"></i></button>
+                <!-- 🔥 新增：左右箭頭切換圖表月份 -->
+                <button @click="prevChartMonth" class="text-gray-400 text-xl hover:text-white p-0 m-0"><i class="fas fa-chevron-left"></i></button>
+                <h1 class="text-lg font-bold absolute left-1/2 transform -translate-x-1/2 tracking-wider cursor-pointer active:scale-95 transition-transform" @click="resetToToday">{{ selectedFullDate.substring(0, 7).replace('/', '年') + '月' }}</h1>
+                <button @click="nextChartMonth" class="text-gray-400 text-xl hover:text-white p-0 m-0"><i class="fas fa-chevron-right"></i></button>
             </div>
             
             <div class="flex w-full border-b border-[#353a47]">
@@ -305,6 +313,7 @@
                 
                 <div class="space-y-4">
                     <div v-if="chartData.length === 0" class="text-center text-gray-500 py-6">本月沒有{{ chartType === 'expense' ? '支出' : '收入' }}資料</div>
+                    
                     <div v-for="item in chartData" :key="item.name" class="flex justify-between items-center border-b border-[#353a47]/50 pb-4 last:border-0">
                         <div class="flex items-center space-x-4">
                             <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shadow-md" :style="{ backgroundColor: item.color }"><i :class="item.icon"></i></div>
@@ -321,13 +330,16 @@
         </div>
     </div>
 
-    <!-- 共用底部導覽列 -->
-    <div class="bg-[#1a1d24] border-t border-[#353a47] fixed bottom-0 w-full max-w-md z-30" style="padding-bottom: env(safe-area-inset-bottom);">
-        <div class="flex justify-between items-center px-6 h-20 relative">
+
+    <!-- ========================================== -->
+    <!-- 🔥 瘦身後的底部導覽列 -->
+    <!-- ========================================== -->
+    <div class="bg-[#1a1d24] border-t border-[#353a47] fixed bottom-0 w-full max-w-md z-30" style="padding-bottom: max(env(safe-area-inset-bottom), 12px);">
+        <div class="flex justify-between items-center px-6 h-14 relative pb-1">
             <button @click="currentTab = 'home'" class="flex flex-col items-center p-2 transition-colors" :class="currentTab === 'home' ? 'text-white' : 'text-gray-500 hover:text-gray-300'"><i class="fas fa-home text-xl"></i></button>
             <button @click="currentTab = 'wallet'" class="flex flex-col items-center p-2 transition-colors" :class="currentTab === 'wallet' ? 'text-white' : 'text-gray-500 hover:text-gray-300'"><i class="fas fa-wallet text-xl"></i></button>
             
-            <div class="absolute left-1/2 transform -translate-x-1/2 -top-6">
+            <div class="absolute left-1/2 transform -translate-x-1/2 -top-5">
                 <button @click="openAddForm" class="w-14 h-14 rounded-full text-white flex items-center justify-center text-2xl border-4 border-[#1a1d24] shadow-lg transition-transform active:scale-95"
                         :class="currentTab === 'form' && formMode === 'add' ? 'bg-gray-600' : 'bg-teal-600'">
                     <i class="fas" :class="currentTab === 'form' && formMode === 'add' ? 'fa-times' : 'fa-plus'"></i>
@@ -380,7 +392,6 @@
                                 {{ t.l }}
                             </button>
                         </div>
-                        <p v-if="settingModalMode === 'edit'" class="text-[10px] text-gray-500 mt-1 text-center">編輯模式無法更改收支屬性</p>
                     </div>
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">子分類 (用逗號分隔，選填)</label>
@@ -398,11 +409,11 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs text-gray-400 mb-2">代表圖示</label>
-                    <div class="grid grid-cols-5 gap-2">
+                <div class="pt-2">
+                    <label class="block text-xs text-gray-400 mb-2">圖示</label>
+                    <div class="flex flex-wrap gap-2">
                         <button v-for="ic in iconOptions" :key="ic" @click="tempSettingData.icon = ic"
-                                class="h-10 rounded-lg flex items-center justify-center text-xl transition-colors border"
+                                class="w-10 h-10 rounded-lg flex items-center justify-center text-xl transition-colors border"
                                 :class="tempSettingData.icon === ic ? 'bg-[#54A0FF] border-[#54A0FF] text-white shadow-md' : 'bg-[#1A1C25] border-gray-700 text-gray-400 hover:bg-[#353a47]'">
                             <i :class="ic"></i>
                         </button>
@@ -425,19 +436,15 @@
 
     createApp({
         setup() {
-            // ==========================================
             // API 連線設定
-            // ==========================================
             const API_URL = 'https://script.google.com/macros/s/AKfycbw0tp1vywQKRyEfxkEOohsasPYHzd27DAXYtaml_PGKfTpdLe26UisDR6bS29VhzyLu/exec';
-            const isLoading = ref(true); // 開局直接顯示 Loading
+            const isLoading = ref(true);
             
-            // 共用的 API 呼叫函式
             const callAPI = async (action, data = {}) => {
                 isLoading.value = true;
                 try {
                     const response = await fetch(API_URL, {
                         method: 'POST',
-                        // 使用 text/plain 可以繞過跨網域 CORS 預檢請求限制
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({ action, data })
                     });
@@ -446,102 +453,130 @@
                     return result;
                 } catch (error) {
                     alert('雲端連線發生錯誤：' + error.message);
-                    console.error(error);
                     return null;
                 } finally {
                     isLoading.value = false;
                 }
             };
 
-            // ==========================================
-            // 資料儲存容器 (全空，等 API 填入)
-            // ==========================================
             const accounts = ref([]);
             const allCategories = ref({ expense: [], income: [], transfer: [] });
             const dailyTransactions = ref([]);
 
-            // ==========================================
-            // 初始化載入資料
-            // ==========================================
             const initData = async () => {
                 const res = await callAPI('getData');
                 if (res && res.data) {
-                    // 1. 解析帳戶
-                    accounts.value = res.data.accounts.map(a => ({
-                        ...a,
-                        initialBalance: Number(a.initialBalance) || 0,
-                        balance: Number(a.initialBalance) || 0
-                    }));
+                    accounts.value = res.data.accounts.map(a => ({ ...a, initialBalance: Number(a.initialBalance) || 0, balance: Number(a.initialBalance) || 0 }));
+                    if (accounts.value.length === 0) accounts.value.push({ id: 'acc_def', name: '現金錢包', type: '現金帳戶', icon: 'fas fa-wallet', color: '#10AC84', initialBalance: 0, balance: 0 });
 
-                    // 如果沒帳戶，提供預設選項，但不強制寫入資料庫，讓使用者自行決定
-                    if (accounts.value.length === 0) {
-                        accounts.value.push({ id: 'acc_default', name: '現金錢包', type: '現金帳戶', icon: 'fas fa-wallet', color: '#10AC84', initialBalance: 0, balance: 0 });
-                    }
-
-                    // 2. 解析分類
                     const parsedCategories = { expense: [], income: [], transfer: [] };
                     res.data.categories.forEach(c => {
                         c.subs = c.subs ? String(c.subs).split(',').map(s=>s.trim()).filter(s=>s) : [];
                         if(parsedCategories[c.type]) parsedCategories[c.type].push(c);
                     });
                     
-                    // 若無分類，提供最基礎預設
-                    if (parsedCategories.expense.length === 0) parsedCategories.expense.push({ id: 'cat_e_def', name: '一般花費', icon: 'fas fa-shopping-bag', color: '#FF9F43', subs: [] });
-                    if (parsedCategories.income.length === 0) parsedCategories.income.push({ id: 'cat_i_def', name: '一般收入', icon: 'fas fa-sack-dollar', color: '#10AC84', subs: [] });
-                    if (parsedCategories.transfer.length === 0) parsedCategories.transfer.push({ id: 'cat_t_def', name: '一般轉帳', icon: 'fas fa-exchange-alt', color: '#54A0FF', subs: [] });
+                    if (parsedCategories.expense.length === 0) parsedCategories.expense.push({ id: 'cat_e', name: '一般花費', icon: 'fas fa-shopping-bag', color: '#FF9F43', subs: [] });
+                    if (parsedCategories.income.length === 0) parsedCategories.income.push({ id: 'cat_i', name: '一般收入', icon: 'fas fa-sack-dollar', color: '#10AC84', subs: [] });
+                    if (parsedCategories.transfer.length === 0) parsedCategories.transfer.push({ id: 'cat_t', name: '一般轉帳', icon: 'fas fa-exchange-alt', color: '#54A0FF', subs: [] });
                     
                     allCategories.value = parsedCategories;
 
-                    // 3. 解析交易明細
-                    dailyTransactions.value = res.data.transactions.map(t => ({
-                        ...t,
-                        numAmount: Number(t.numAmount) || 0
-                    })).sort((a, b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time)); // 依日期時間新到舊排序
+                    dailyTransactions.value = res.data.transactions.map(t => ({ ...t, numAmount: Number(t.numAmount) || 0 }))
+                        .sort((a, b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
 
                     recalculateBalances();
                 }
             };
-            // Vue 元件掛載完成時觸發 API
             onMounted(initData);
 
             // ==========================================
-            // 日期與畫面狀態
+            // 🔥 日期生成與安全轉換 (解決跨越時區Bug)
             // ==========================================
             const currentTab = ref('home'); 
-            const now = new Date();
-            const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().split('T')[0];
-            const selectedFullDate = ref(localDate.replace(/-/g, '/')); 
             
-            const generateCalendar = () => {
+            // 安全的格式化函數 YYYY/MM/DD
+            const getLocalDateStr = (dateObj) => {
+                const y = dateObj.getFullYear();
+                const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const d = String(dateObj.getDate()).padStart(2, '0');
+                return `${y}/${m}/${d}`;
+            };
+            
+            const now = new Date();
+            const localDate = getLocalDateStr(now);
+            const selectedFullDate = ref(localDate); 
+            
+            const isCalendarExpanded = ref(false);
+
+            // 🔥 動態根據選擇的日期計算日曆範圍
+            const visibleCalendarDays = computed(() => {
                 const days = [];
-                const base = new Date();
-                base.setDate(base.getDate() - 7);
-                for(let i=0; i<21; i++) {
-                    const d = new Date(base);
-                    const text = d.getDate().toString().padStart(2, '0');
-                    const fullDate = d.toISOString().split('T')[0].replace(/-/g, '/');
-                    days.push({ fullDate, text, isDimmed: false, isSunday: d.getDay() === 0, isToday: fullDate === localDate.replace(/-/g, '/'), isSelected: fullDate === selectedFullDate.value });
-                    base.setDate(base.getDate() + 1);
+                const [sy, sm, sd] = selectedFullDate.value.split('/');
+                const current = new Date(sy, sm - 1, sd);
+                
+                if (isCalendarExpanded.value) {
+                    const firstDay = new Date(current.getFullYear(), current.getMonth(), 1);
+                    const lastDay = new Date(current.getFullYear(), current.getMonth() + 1, 0);
+                    let start = new Date(firstDay);
+                    start.setDate(start.getDate() - start.getDay());
+                    let end = new Date(lastDay);
+                    if (end.getDay() !== 6) end.setDate(end.getDate() + (6 - end.getDay()));
+                    
+                    let temp = new Date(start);
+                    while (temp <= end) {
+                        const fullDate = getLocalDateStr(temp);
+                        days.push({ fullDate, text: String(temp.getDate()).padStart(2, '0'), isDimmed: temp.getMonth() !== current.getMonth(), isSunday: temp.getDay() === 0, isToday: fullDate === localDate, isSelected: fullDate === selectedFullDate.value });
+                        temp.setDate(temp.getDate() + 1);
+                    }
+                } else {
+                    let temp = new Date(current);
+                    temp.setDate(temp.getDate() - temp.getDay());
+                    for (let i = 0; i < 7; i++) {
+                        const fullDate = getLocalDateStr(temp);
+                        days.push({ fullDate, text: String(temp.getDate()).padStart(2, '0'), isDimmed: false, isSunday: temp.getDay() === 0, isToday: fullDate === localDate, isSelected: fullDate === selectedFullDate.value });
+                        temp.setDate(temp.getDate() + 1);
+                    }
                 }
                 return days;
-            };
-            const calendarDays = ref(generateCalendar());
-            const isCalendarExpanded = ref(false);
-            const visibleCalendarDays = computed(() => {
-                if (isCalendarExpanded.value) return calendarDays.value;
-                const selectedIdx = calendarDays.value.findIndex(d => d.isSelected);
-                const weekStart = Math.floor(Math.max(0, selectedIdx) / 7) * 7;
-                return calendarDays.value.slice(weekStart, weekStart + 7);
             });
+
             const toggleCalendar = () => isCalendarExpanded.value = !isCalendarExpanded.value;
-            const selectDate = (clickedDay) => { calendarDays.value.forEach(d => d.isSelected = false); clickedDay.isSelected = true; selectedFullDate.value = clickedDay.fullDate; };
+            const selectDate = (clickedDay) => { selectedFullDate.value = clickedDay.fullDate; };
+            const resetToToday = () => { selectedFullDate.value = localDate; };
+            
+            // 🔥 新增：日曆前後切換時間邏輯
+            const prevPeriod = () => {
+                const [y, m, d] = selectedFullDate.value.split('/');
+                const dateObj = new Date(y, m - 1, d);
+                if (isCalendarExpanded.value) dateObj.setMonth(dateObj.getMonth() - 1);
+                else dateObj.setDate(dateObj.getDate() - 7);
+                selectedFullDate.value = getLocalDateStr(dateObj);
+            };
+            const nextPeriod = () => {
+                const [y, m, d] = selectedFullDate.value.split('/');
+                const dateObj = new Date(y, m - 1, d);
+                if (isCalendarExpanded.value) dateObj.setMonth(dateObj.getMonth() + 1);
+                else dateObj.setDate(dateObj.getDate() + 7);
+                selectedFullDate.value = getLocalDateStr(dateObj);
+            };
+
+            const prevChartMonth = () => {
+                const [y, m, d] = selectedFullDate.value.split('/');
+                const dateObj = new Date(y, m - 1, d);
+                dateObj.setMonth(dateObj.getMonth() - 1);
+                selectedFullDate.value = getLocalDateStr(dateObj);
+            };
+            const nextChartMonth = () => {
+                const [y, m, d] = selectedFullDate.value.split('/');
+                const dateObj = new Date(y, m - 1, d);
+                dateObj.setMonth(dateObj.getMonth() + 1);
+                selectedFullDate.value = getLocalDateStr(dateObj);
+            };
+
             const showSearch = ref(false);
             const searchQuery = ref('');
             const toggleSearch = () => { showSearch.value = !showSearch.value; if (!showSearch.value) searchQuery.value = ''; };
 
-            // ==========================================
-            // 餘額計算與 Dashboard 數據
-            // ==========================================
             const recalculateBalances = () => {
                 accounts.value.forEach(acc => acc.balance = acc.initialBalance || 0);
                 dailyTransactions.value.forEach(tx => {
@@ -568,9 +603,8 @@
                 }
             });
 
-            // ==========================================
-            // Wallet 錢包
-            // ==========================================
+
+            // Wallet
             const hideBalance = ref(false);
             const totalAssets = computed(() => accounts.value.filter(a => a.balance > 0).reduce((sum, a) => sum + a.balance, 0));
             const totalLiabilities = computed(() => accounts.value.filter(a => a.balance < 0).reduce((sum, a) => sum + Math.abs(a.balance), 0));
@@ -588,9 +622,7 @@
             });
             const getGroupTotal = (group) => group.reduce((sum, acc) => sum + acc.balance, 0);
 
-            // ==========================================
-            // Chart 報表
-            // ==========================================
+            // Chart
             const chartType = ref('expense');
             const chartData = computed(() => {
                 const currentMonthPrefix = selectedFullDate.value.replace(/\//g, '-').substring(0, 7);
@@ -616,21 +648,19 @@
                 return `conic-gradient(${gradient.join(', ')})`;
             });
 
-            // ==========================================
-            // Form 表單
-            // ==========================================
+            // Form
             const formMode = ref('add'); 
             const editingTransactionId = ref(null); 
             const transactionType = ref('expense');
             const amount = ref('');
             const itemName = ref(''); 
             const memo = ref('');     
-            const transactionDate = ref(localDate);
+            const transactionDate = ref(localDate.replace(/\//g, '-'));
             const transactionTime = ref(now.toTimeString().slice(0, 5));
             
             const currentCategories = computed(() => allCategories.value[transactionType.value] || []);
-            const selectedAccount = ref(accounts.value.length > 0 ? accounts.value[0] : null);
-            const selectedCategory = ref(currentCategories.value.length > 0 ? currentCategories.value[0] : null);
+            const selectedAccount = ref(null);
+            const selectedCategory = ref(null);
 
             const setTransactionType = (type) => {
                 transactionType.value = type;
@@ -639,7 +669,8 @@
 
             const resetForm = () => {
                 amount.value = ''; itemName.value = ''; memo.value = '';
-                transactionDate.value = selectedFullDate.value.replace(/\//g, '-'); transactionTime.value = new Date().toTimeString().slice(0, 5);
+                transactionDate.value = selectedFullDate.value.replace(/\//g, '-'); 
+                transactionTime.value = new Date().toTimeString().slice(0, 5);
                 setTransactionType('expense');
                 if(accounts.value.length > 0) selectedAccount.value = accounts.value[0];
             };
@@ -658,7 +689,6 @@
                 currentTab.value = 'form';
             };
 
-            // 🔥 儲存明細至 API
             const saveTransaction = async () => {
                 if (!amount.value || amount.value <= 0) return alert('請輸入有效金額！');
                 if (!selectedAccount.value) return alert('請先建立並選擇一個付款帳戶！');
@@ -668,34 +698,22 @@
                 
                 const txData = { 
                     id: formMode.value === 'add' ? 'tx_' + Date.now() : editingTransactionId.value, 
-                    date: transactionDate.value, 
-                    time: transactionTime.value, 
-                    type: transactionType.value, 
-                    accountId: selectedAccount.value.id, 
-                    categoryName: cat.name, 
-                    name: itemName.value || cat.name, 
-                    memo: memo.value, 
-                    numAmount: numAmt, 
-                    icon: cat.icon, 
-                    color: cat.color 
+                    date: transactionDate.value, time: transactionTime.value, type: transactionType.value, 
+                    accountId: selectedAccount.value.id, categoryName: cat.name, name: itemName.value || cat.name, 
+                    memo: memo.value, numAmount: numAmt, icon: cat.icon, color: cat.color 
                 };
 
                 const res = await callAPI('saveTransaction', txData);
                 if (res) {
                     if (formMode.value === 'add') { dailyTransactions.value.unshift(txData); } 
                     else { const idx = dailyTransactions.value.findIndex(t => t.id === editingTransactionId.value); if(idx !== -1) dailyTransactions.value[idx] = txData; }
-                    
-                    // 重新排序確保時間正確
                     dailyTransactions.value.sort((a, b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
-                    
                     recalculateBalances();
                     selectedFullDate.value = txData.date.replace(/-/g, '/');
-                    calendarDays.value.forEach(d => { d.isSelected = (d.fullDate === selectedFullDate.value); });
                     currentTab.value = 'home';
                 }
             };
 
-            // 🔥 刪除明細
             const executeDeleteTransaction = async () => {
                 if(confirm('確定要刪除這筆記錄嗎？刪除後無法復原。')) { 
                     const res = await callAPI('deleteTransaction', { id: editingTransactionId.value });
@@ -707,9 +725,7 @@
                 }
             };
 
-            // ==========================================
-            // 設定管理 Settings
-            // ==========================================
+            // Settings
             const settingTab = ref('category'); 
             const settingCategoryType = ref('expense');
             const showSettingModal = ref(false);
@@ -724,98 +740,59 @@
             const openAddSettingDirectly = () => { openSettingModal(settingTab.value, null, 'add'); };
 
             const openSettingModal = (type, item, mode) => {
-                settingModalMode.value = mode; 
-                settingModalType.value = type;
+                settingModalMode.value = mode; settingModalType.value = type;
                 if (mode === 'edit') {
                     editingSettingId = item.id;
-                    tempSettingData.value = { 
-                        name: item.name, 
-                        type: type === 'account' ? item.type : settingCategoryType.value,
-                        icon: item.icon, 
-                        color: item.color, 
-                        initialBalance: type === 'account' ? item.initialBalance : 0,
-                        subsString: type === 'category' && item.subs ? item.subs.join(', ') : ''
-                    };
+                    tempSettingData.value = { name: item.name, type: type === 'account' ? item.type : settingCategoryType.value, icon: item.icon, color: item.color, initialBalance: type === 'account' ? item.initialBalance : 0, subsString: type === 'category' && item.subs ? item.subs.join(', ') : '' };
                 } else {
-                    tempSettingData.value = type === 'account' 
-                        ? { name: '', type: '現金帳戶', icon: 'fas fa-wallet', color: colorOptions[3], initialBalance: '' } 
-                        : { name: '', type: settingCategoryType.value, icon: 'fas fa-star', color: colorOptions[1], subsString: '' };
+                    tempSettingData.value = type === 'account' ? { name: '', type: '現金帳戶', icon: 'fas fa-wallet', color: colorOptions[3], initialBalance: '' } : { name: '', type: settingCategoryType.value, icon: 'fas fa-star', color: colorOptions[1], subsString: '' };
                 }
                 showSettingModal.value = true;
             };
 
             const closeSettingModal = () => { showSettingModal.value = false; tempSettingData.value = {}; editingSettingId = null; };
 
-            // 🔥 儲存設定至 API
             const saveSettingItem = async () => {
                 if (!tempSettingData.value.name.trim()) return alert('請輸入名稱');
-                
-                const finalIcon = tempSettingData.value.icon;
-                const finalColor = tempSettingData.value.color;
+                const finalIcon = tempSettingData.value.icon; const finalColor = tempSettingData.value.color;
 
                 if (settingModalType.value === 'account') {
                     const bal = parseInt(tempSettingData.value.initialBalance) || 0;
-                    const accData = { 
-                        id: settingModalMode.value === 'add' ? 'acc_' + Date.now() : editingSettingId, 
-                        name: tempSettingData.value.name, 
-                        type: tempSettingData.value.type, 
-                        icon: finalIcon, color: finalColor, 
-                        initialBalance: bal 
-                    };
-                    
+                    const accData = { id: settingModalMode.value === 'add' ? 'acc_' + Date.now() : editingSettingId, name: tempSettingData.value.name, type: tempSettingData.value.type, icon: finalIcon, color: finalColor, initialBalance: bal };
                     const res = await callAPI('saveAccount', accData);
                     if(res) {
-                        accData.balance = bal; // Local field
+                        accData.balance = bal; 
                         if (settingModalMode.value === 'add') { accounts.value.push(accData); } 
                         else {
                             const idx = accounts.value.findIndex(a => a.id === editingSettingId);
-                            if(idx !== -1) accounts.value[idx] = accData;
+                            if(idx !== -1) { accounts.value[idx].name = accData.name; accounts.value[idx].type = accData.type; accounts.value[idx].icon = accData.icon; accounts.value[idx].color = accData.color; const diff = bal - accounts.value[idx].initialBalance; accounts.value[idx].initialBalance = bal; accounts.value[idx].balance += diff; }
                         }
                         recalculateBalances();
                     }
                 } else if (settingModalType.value === 'category') {
                     const finalSubsString = tempSettingData.value.subsString ? tempSettingData.value.subsString.trim() : '';
-                    const catData = { 
-                        id: settingModalMode.value === 'add' ? 'cat_' + Date.now() : editingSettingId, 
-                        name: tempSettingData.value.name, 
-                        type: tempSettingData.value.type, 
-                        icon: finalIcon, color: finalColor, 
-                        subs: finalSubsString 
-                    };
-                    
+                    const catData = { id: settingModalMode.value === 'add' ? 'cat_' + Date.now() : editingSettingId, name: tempSettingData.value.name, type: tempSettingData.value.type, icon: finalIcon, color: finalColor, subs: finalSubsString };
                     const res = await callAPI('saveCategory', catData);
                     if(res) {
                         catData.subs = finalSubsString ? finalSubsString.split(',').map(s => s.trim()).filter(s => s) : [];
                         if (settingModalMode.value === 'add') { allCategories.value[tempSettingData.value.type].push(catData); } 
-                        else {
-                            const list = allCategories.value[tempSettingData.value.type];
-                            const idx = list.findIndex(c => c.id === editingSettingId);
-                            if(idx !== -1) list[idx] = catData;
-                        }
+                        else { const list = allCategories.value[tempSettingData.value.type]; const idx = list.findIndex(c => c.id === editingSettingId); if(idx !== -1) list[idx] = catData; }
                     }
                 }
                 closeSettingModal();
             };
 
-            // 🔥 刪除設定
             const deleteSettingItem = async () => {
                 if(!confirm(`確定要刪除「${tempSettingData.value.name}」嗎？`)) return;
-                
                 if (settingModalType.value === 'account') {
                     if (accounts.value.length <= 1) return alert('必須保留至少一個付款方式！');
                     const res = await callAPI('deleteAccount', { id: editingSettingId });
-                    if(res) {
-                        accounts.value = accounts.value.filter(a => a.id !== editingSettingId);
-                        if (selectedAccount.value?.id === editingSettingId) selectedAccount.value = accounts.value[0];
-                    }
+                    if(res) { accounts.value = accounts.value.filter(a => a.id !== editingSettingId); if (selectedAccount.value?.id === editingSettingId) selectedAccount.value = accounts.value[0]; }
                 } else if (settingModalType.value === 'category') {
                     const list = allCategories.value[tempSettingData.value.type];
                     if (list.length <= 1) return alert('該屬性必須保留至少一個分類！');
                     const res = await callAPI('deleteCategory', { id: editingSettingId });
-                    if(res) {
-                        allCategories.value[tempSettingData.value.type] = list.filter(c => c.id !== editingSettingId);
-                        if (selectedCategory.value?.id === editingSettingId) selectedCategory.value = allCategories.value[tempSettingData.value.type][0];
-                    }
+                    if(res) { allCategories.value[tempSettingData.value.type] = list.filter(c => c.id !== editingSettingId); if (selectedCategory.value?.id === editingSettingId) selectedCategory.value = allCategories.value[tempSettingData.value.type][0]; }
                 }
                 closeSettingModal();
             };
@@ -824,6 +801,7 @@
                 isLoading, currentTab, hideBalance, totalNet, totalAssets, totalLiabilities, groupedAccounts, getGroupTotal,
                 chartType, chartData, chartTotalAmount, donutStyle, currentMonthExpense, currentMonthIncome, currentMonthNet,
                 selectedFullDate, calendarDays, visibleCalendarDays, toggleCalendar, isCalendarExpanded,
+                prevPeriod, nextPeriod, prevChartMonth, nextChartMonth, resetToToday,
                 dailyTransactions, filteredTransactions, selectDate, showSearch, toggleSearch, searchQuery,
                 formMode, openAddForm, openTransactionEdit, executeDeleteTransaction,
                 transactionType, amount, itemName, memo, transactionDate, transactionTime,
