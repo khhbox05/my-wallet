@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="記帳 App">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a1d24">
+    
+    <title>記帳 Web App - 雲端資料庫連線版</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        body { background-color: #1a1d24; color: #ffffff; overscroll-behavior-y: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+        input, textarea, select { -webkit-user-select: auto; user-select: auto; }
+        .border-custom { border-color: #353a47; }
+        .bg-custom-btn { background-color: rgba(255, 255, 255, 0.03); }
+        .bg-custom-btn:hover { background-color: rgba(255, 255, 255, 0.08); }
+        input[type="date"], input[type="time"] { color-scheme: dark; }
+        .donut-chart {
+            background: conic-gradient(
+                #FDCB6E 0% 51.4%, #10AC84 51.4% 64%, #FF9F43 64% 75%, 
+                #9B59B6 75% 85%, #54A0FF 85% 94%, #FF5252 94% 100%
+            );
+        }
+    </style>
+</head>
+<body class="font-sans antialiased selection:bg-blue-500">
+
+<div id="app" class="max-w-md mx-auto h-[100dvh] flex flex-col relative overflow-hidden bg-[#1a1d24]">
+    
+    <!-- 全域 Loading 遮罩 -->
+    <div v-if="isLoading" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#1a1d24]/90 backdrop-blur-sm">
+        <i class="fas fa-circle-notch fa-spin text-4xl text-teal-400 mb-4"></i>
+        <p class="text-gray-300 tracking-widest font-medium">資料同步中...</p>
+    </div>
+
+    <!-- 1. 總覽主畫面 (Dashboard) -->
+    <div v-show="currentTab === 'home'" class="flex-1 flex flex-col w-full h-full overflow-y-auto">
+        <div class="bg-[#1a1d24] sticky top-0 z-10" style="padding-top: max(env(safe-area-inset-top), 20px);">
+            <div class="relative flex justify-between items-center px-5 pt-3 pb-4">
+                <div class="w-16"></div>
+                <h1 class="text-lg font-bold absolute left-1/2 transform -translate-x-1/2 tracking-wider">{{ selectedFullDate }}</h1>
+                <div class="flex space-x-5 w-16 justify-end">
+                    <button @click="toggleCalendar" class="text-gray-400 text-lg hover:text-white transition-colors"><i class="fas" :class="isCalendarExpanded ? 'fa-compress' : 'fa-expand'"></i></button>
+                    <button @click="toggleSearch" class="text-gray-400 text-lg hover:text-white transition-colors"><i class="fas" :class="showSearch ? 'fa-times' : 'fa-search'"></i></button>
+                </div>
+            </div>
+            <div v-if="showSearch" class="px-5 pb-3 animate-[fadeIn_0.2s_ease-out]">
+                <div class="bg-[#2A2D3A] rounded-xl flex items-center px-4 h-10 border border-gray-600 focus-within:border-[#54A0FF] transition-colors">
+                    <i class="fas fa-search text-gray-500 mr-2 text-sm"></i>
+                    <input v-model="searchQuery" type="text" placeholder="搜尋項目、備註或金額..." class="bg-transparent w-full text-white outline-none text-sm placeholder-gray-500">
+                </div>
+            </div>
+        </div>
+
+        <div class="px-3 pb-4 border-b border-custom transition-all duration-300">
+            <div class="grid grid-cols-7 text-center mb-4"><div v-for="day in ['週日','週一','週二','週三','週四','週五','週六']" :key="day" class="text-xs text-gray-400 font-medium">{{ day }}</div></div>
+            <div class="grid grid-cols-7 text-center gap-y-4 transition-all">
+                <div v-for="(day, index) in visibleCalendarDays" :key="index" @click="selectDate(day)" class="flex justify-center items-center cursor-pointer">
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm transition-all" :class="[day.isDimmed ? 'text-gray-600' : (day.isSunday ? 'text-[#FF5252]' : 'text-gray-200'), day.isToday ? 'bg-[#2A2D3A]' : '', day.isSelected ? 'border-[1.5px] border-[#54A0FF] font-bold text-white shadow-[0_0_8px_rgba(84,160,255,0.3)]' : 'border-transparent']">{{ day.text }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-4 pt-4 pb-32 bg-[#12141C] flex-1">
+            <div class="bg-[#232631] rounded-2xl p-4 flex justify-between items-center mb-4 border border-[#353a47]">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 rounded-xl bg-white text-gray-800 flex items-center justify-center text-lg font-bold"><i class="far fa-calendar-alt text-yellow-500"></i></div>
+                    <div><h3 class="text-gray-100 font-medium">當月統計</h3><p class="text-xs text-gray-500 mt-1">結餘 <span :class="currentMonthNet >= 0 ? 'text-[#10AC84]' : 'text-[#FF5252]'">{{ currentMonthNet >= 0 ? '+' : '' }}${{ currentMonthNet.toLocaleString() }}</span></p></div>
+                </div>
+                <div class="text-right"><p class="text-[#FF5252] font-bold">${{ currentMonthExpense.toLocaleString() }} <span class="text-gray-500 text-xs mx-1">•</span> <span class="text-[#10AC84]">${{ currentMonthIncome.toLocaleString() }}</span></p></div>
+            </div>
+
+            <div class="space-y-4 mt-6">
+                <div v-if="filteredTransactions.length === 0" class="text-center text-gray-500 py-10"><i class="fas fa-receipt text-3xl mb-3"></i><p>這天還沒有任何紀錄喔</p></div>
+                <div v-for="item in filteredTransactions" :key="item.id" @click="openTransactionEdit(item)" class="flex justify-between items-center border-b border-[#353a47]/50 pb-4 last:border-0 cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex items-center space-x-4 pointer-events-none">
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shadow-md" :style="{ backgroundColor: item.color }"><i :class="item.icon"></i></div>
+                        <div>
+                            <h4 class="text-gray-200 font-medium text-base">{{ item.name }}</h4>
+                            <p class="text-xs text-gray-500 mt-1">{{ item.memo || '無備註' }}</p>
+                        </div>
+                    </div>
+                    <div class="text-right pointer-events-none">
+                        <p class="font-bold text-lg mb-1" :class="item.type === 'expense' ? 'text-[#FF5252]' : 'text-[#10AC84]'">{{ item.type === 'expense' ? '-' : '+' }}${{ item.numAmount.toLocaleString() }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 2. 帳戶總覽畫面 (Wallet) -->
+    <div v-show="currentTab === 'wallet'" class="flex-1 flex flex-col w-full h-full overflow-hidden bg-[#1a1d24]">
+        <div class="sticky top-0 z-20 bg-[#1a1d24]" style="padding-top: max(env(safe-area-inset-top), 20px);">
+            <div class="relative flex justify-between items-center px-5 pt-4 pb-2">
+                <button @click="hideBalance = !hideBalance" class="text-gray-300 text-xl hover:text-white p-0 m-0 w-8 text-left"><i class="fas" :class="hideBalance ? 'fa-eye-slash' : 'fa-eye'"></i></button>
+                <h1 class="text-lg font-bold absolute left-1/2 transform -translate-x-1/2 tracking-wider">帳戶總覽</h1>
+                <div class="flex space-x-4 w-16 justify-end"></div>
+            </div>
+            
+            <div class="text-center mt-2 mb-4">
+                <p class="text-xs text-gray-400 mb-1">淨資產</p>
+                <div class="text-5xl font-bold flex justify-center items-baseline space-x-2">
+                    <span class="text-lg font-semibold text-gray-200">TWD</span>
+                    <span :class="hideBalance ? 'text-gray-400' : (totalNet >= 0 ? 'text-[#10AC84]' : 'text-[#FF5252]')">{{ hideBalance ? '***' : totalNet.toLocaleString() }}</span>
+                </div>
+                <div class="flex justify-center space-x-6 text-xs text-gray-400 mt-3">
+                    <span>總資產 <span class="ml-1" :class="hideBalance ? 'text-gray-500' : 'text-[#10AC84]'">{{ hideBalance ? '***' : totalAssets.toLocaleString() }}</span></span>
+                    <span>總負債 <span class="ml-1" :class="hideBalance ? 'text-gray-500' : 'text-[#FF5252]'">{{ hideBalance ? '***' : totalLiabilities.toLocaleString() }}</span></span>
+                </div>
+            </div>
+            <div class="flex justify-center text-sm text-gray-300 mb-6">
+                <button class="flex items-center hover:text-white border-b border-gray-500 pb-0.5"><i class="fas fa-chart-pie mr-2 text-gray-400"></i>各分組佔比</button>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto flex flex-col">
+            <div class="bg-[#12141C] pt-6 pb-32 flex-1 rounded-t-3xl mt-2">
+                <div v-for="(group, key) in groupedAccounts" :key="key" class="mb-4">
+                    <div class="flex justify-between items-center px-6 py-2 text-gray-200">
+                        <div class="flex items-center"><i class="fas fa-minus mr-2 text-gray-500 text-xs"></i> {{ key }}</div>
+                        <div class="text-sm" :class="hideBalance ? 'text-gray-500' : 'text-gray-300'">{{ hideBalance ? '***' : '$' + getGroupTotal(group).toLocaleString() }}</div>
+                    </div>
+                    <div v-for="acc in group" :key="acc.id" class="flex justify-between items-center px-6 py-4 hover:bg-[#1a1d24] transition-colors">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl text-white bg-[#232631]"><i :class="acc.icon" :style="{ color: acc.color }"></i></div>
+                            <h4 class="text-gray-200 font-medium text-base">{{ acc.name }}</h4>
+                        </div>
+                        <div class="font-medium" :class="hideBalance ? 'text-gray-500' : (acc.balance < 0 ? 'text-[#FF5252]' : 'text-[#10AC84]')">
+                            {{ hideBalance ? '***' : '$' + Math.abs(acc.balance).toLocaleString() }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 3. 表單畫面 (Add / Edit Transaction) -->
+    <div v-show="currentTab === 'form'" class="flex-1 flex flex-col w-full h-full overflow-hidden">
+        <div class="bg-[#1a1d24] sticky top-0 z-20" style="padding-top: max(env(safe-area-inset-top), 20px);">
+            <div class="relative flex justify-between items-center px-5 pt-4 pb-5">
+                <button @click="currentTab = 'home'" class="text-gray-300 text-base hover:text-white transition-colors p-0 m-0">取消</button>
+                <h1 class="text-base font-bold absolute left-1/2 transform -translate-x-1/2 tracking-wider">{{ formMode === 'edit' ? '編輯記錄' : '新增記錄' }}</h1>
+                <button @click="saveTransaction" class="text-teal-400 text-base hover:text-teal-300 transition-colors font-medium p-0 m-0">儲存</button>
+            </div>
+            <div class="border-b border-[#353a47]">
+                <div class="flex overflow-x-auto no-scrollbar">
+                    <div class="flex space-x-6 px-5">
+                        <button @click="setTransactionType('expense')" class="pb-3 text-sm font-medium transition-colors relative" :class="transactionType === 'expense' ? 'text-white' : 'text-gray-400 hover:text-gray-300'">支出<div v-if="transactionType === 'expense'" class="absolute bottom-0 left-0 w-full h-[2px] bg-[#FF5252]"></div></button>
+                        <button @click="setTransactionType('income')" class="pb-3 text-sm font-medium transition-colors relative" :class="transactionType === 'income' ? 'text-white' : 'text-gray-400 hover:text-gray-300'">收入<div v-if="transactionType === 'income'" class="absolute bottom-0 left-0 w-full h-[2px] bg-[#10AC84]"></div></button>
+                        <button @click="setTransactionType('transfer')" class="pb-3 text-sm font-medium transition-colors relative" :class="transactionType === 'transfer' ? 'text-white' : 'text-gray-400 hover:text-gray-300'">轉帳<div v-if="transactionType === 'transfer'" class="absolute bottom-0 left-0 w-full h-[2px] bg-blue-400"></div></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-5 pb-32 pt-6 overscroll-contain">
+            <div class="space-y-3 mb-5">
+                <div class="rounded-xl border border-custom bg-custom-btn flex items-center px-4 h-14 focus-within:border-gray-400 transition-colors">
+                    <div class="bg-[#4a5a73] text-white px-2 py-0.5 rounded text-xs mr-3 font-medium">TWD</div>
+                    <input v-model="amount" type="number" placeholder="金額" class="bg-transparent w-full text-right outline-none text-2xl placeholder-gray-500 font-bold" :class="{'text-[#FF5252]': transactionType === 'expense', 'text-[#10AC84]': transactionType === 'income', 'text-blue-400': transactionType === 'transfer'}">
+                </div>
+                <div class="rounded-xl border border-custom bg-custom-btn flex items-center px-4 h-14 focus-within:border-gray-400 transition-colors">
+                    <input v-model="itemName" type="text" placeholder="項目名稱 (例如：午餐)" class="bg-transparent w-full text-right outline-none text-white text-lg placeholder-gray-500">
+                    <div class="ml-3 text-gray-500"><i class="fas fa-tag"></i></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="rounded-xl border border-custom bg-custom-btn h-12 flex items-center px-3 focus-within:border-gray-400 transition-colors relative overflow-hidden">
+                    <i class="fas fa-calendar-alt text-gray-500 mr-2 z-0"></i>
+                    <input v-model="transactionDate" type="date" class="bg-transparent w-full text-white outline-none text-sm cursor-pointer z-10 relative">
+                </div>
+                <div class="rounded-xl border border-custom bg-custom-btn h-12 flex items-center px-3 focus-within:border-gray-400 transition-colors relative overflow-hidden">
+                    <i class="fas fa-clock text-gray-500 mr-2 z-0"></i>
+                    <input v-model="transactionTime" type="time" class="bg-transparent w-full text-white outline-none text-sm cursor-pointer z-10 relative">
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-gray-400">付款帳戶</span>
+                        <button @click="currentTab = 'settings'; settingTab = 'account'" class="text-xs px-2 py-1 text-gray-400 bg-custom-btn rounded hover:text-white transition-colors">管理</button>
+                    </div>
+                    <!-- 若無帳戶防呆 -->
+                    <div v-if="accounts.length === 0" class="text-xs text-gray-500">尚未建立帳戶</div>
+                    <div class="flex space-x-3 overflow-x-auto no-scrollbar pb-1">
+                        <button v-for="acc in accounts" :key="acc.id" @click="selectedAccount = acc" class="relative flex-shrink-0 px-4 py-2 rounded-xl text-sm transition-all border flex items-center space-x-2 overflow-hidden" :class="[selectedAccount?.id === acc.id ? 'bg-[#353a47] border-gray-500 text-white' : 'bg-custom-btn border-transparent text-gray-400 hover:bg-[#2A2D3A]']">
+                            <i :class="acc.icon" :style="{ color: acc.color }"></i><span>{{ acc.name }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-gray-400">{{ transactionType === 'transfer' ? '轉帳目的' : '消費分類' }}</span>
+                        <button @click="currentTab = 'settings'; settingTab = 'category'; settingCategoryType = transactionType" class="text-xs px-2 py-1 text-gray-400 bg-custom-btn rounded hover:text-white transition-colors">管理</button>
+                    </div>
+                    <div v-if="currentCategories.length === 0" class="text-xs text-gray-500">尚未建立分類</div>
+                    <div class="flex space-x-3 overflow-x-auto no-scrollbar pb-1">
+                        <button v-for="cat in currentCategories" :key="cat.id" @click="selectedCategory = cat" class="relative flex-shrink-0 px-4 py-2 rounded-xl text-sm transition-all border flex items-center space-x-2 overflow-hidden" :class="[selectedCategory?.id === cat.id ? 'bg-[#353a47] border-gray-500 text-white' : 'bg-custom-btn border-transparent text-gray-400 hover:bg-[#2A2D3A]']">
+                            <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white mr-1" :style="{ backgroundColor: cat.color }"><i :class="cat.icon"></i></div>
+                            <span>{{ cat.name }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 mb-8"><div class="text-gray-400 text-sm mb-2 font-medium">#詳細備註</div><textarea v-model="memo" class="w-full h-24 rounded-xl border border-custom bg-custom-btn p-3 text-white text-sm outline-none resize-none placeholder-gray-500 focus:border-gray-400 transition-colors" placeholder="輸入備註..."></textarea></div>
+
+            <button v-if="formMode === 'edit'" @click="executeDeleteTransaction" class="w-full py-4 rounded-xl border border-red-500/30 bg-red-500/10 text-red-500 font-bold hover:bg-red-500/20 transition-colors flex items-center justify-center mb-8"><i class="fas fa-trash-alt mr-2"></i> 刪除此筆記錄</button>
+        </div>
+    </div>
+
+
+    <!-- 4. 設定管理畫面 (Settings) -->
+    <div v-show="currentTab === 'settings'" class="flex-1 flex flex-col w-full h-full overflow-hidden bg-[#12141C]">
+        <div class="bg-[#1a1d24] sticky top-0 z-20" style="padding-top: max(env(safe-area-inset-top), 20px);">
+            <div class="relative flex justify-between items-center px-5 pt-4 pb-4 border-b border-[#353a47]">
+                <button @click="currentTab = 'home'" class="text-gray-400 text-xl hover:text-white p-0 m-0"><i class="fas fa-times"></i></button>
+                <h1 class="text-lg font-bold absolute left-1/2 transform -translate-x-1/2 tracking-wider">設定管理</h1>
+                <button @click="openAddSettingDirectly" class="text-gray-400 text-xl hover:text-white p-0 m-0"><i class="fas fa-plus"></i></button>
+            </div>
+            <div class="flex w-full">
+                <button @click="settingTab = 'category'" class="flex-1 py-3 text-sm font-medium transition-colors border-b-2" :class="settingTab === 'category' ? 'text-teal-400 border-teal-400' : 'text-gray-500 border-transparent'">類別管理</button>
+                <button @click="settingTab = 'account'" class="flex-1 py-3 text-sm font-medium transition-colors border-b-2" :class="settingTab === 'account' ? 'text-teal-400 border-teal-400' : 'text-gray-500 border-transparent'">帳戶管理</button>
+            </div>
+            <div v-if="settingTab === 'category'" class="flex px-4 py-2 space-x-2 bg-[#1a1d24]">
+                <button @click="settingCategoryType = 'expense'" class="px-4 py-1.5 rounded-full text-xs font-medium transition-colors" :class="settingCategoryType === 'expense' ? 'bg-[#FF5252] text-white' : 'bg-[#2A2D3A] text-gray-400'">支出</button>
+                <button @click="settingCategoryType = 'income'" class="px-4 py-1.5 rounded-full text-xs font-medium transition-colors" :class="settingCategoryType === 'income' ? 'bg-[#10AC84] text-white' : 'bg-[#2A2D3A] text-gray-400'">收入</button>
+                <button @click="settingCategoryType = 'transfer'" class="px-4 py-1.5 rounded-full text-xs font-medium transition-colors" :class="settingCategoryType === 'transfer' ? 'bg-blue-400 text-white' : 'bg-[#2A2D3A] text-gray-400'">轉帳</button>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto pb-32">
+            <div v-if="settingTab === 'account'">
+                <div v-if="accounts.length === 0" class="text-center text-gray-500 py-10">尚無帳戶，請點擊右上角新增</div>
+                <div v-for="acc in accounts" :key="acc.id" class="flex justify-between items-center px-5 py-4 border-b border-[#353a47] active:bg-[#2A2D3A] transition-colors">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shadow-md bg-[#2A2D3A]"><i :class="acc.icon" :style="{ color: acc.color }"></i></div>
+                        <div><p class="text-gray-200 font-medium text-base">{{ acc.name }}</p><p class="text-xs text-gray-500 mt-1">{{ acc.type }}</p></div>
+                    </div>
+                    <div class="flex space-x-4 text-gray-500 text-lg">
+                        <button @click="openSettingModal('account', acc, 'edit')" class="hover:text-teal-400"><i class="fas fa-edit"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="settingTab === 'category'">
+                <div v-if="(allCategories[settingCategoryType] || []).length === 0" class="text-center text-gray-500 py-10">尚無分類，請點擊右上角新增</div>
+                <div v-for="cat in allCategories[settingCategoryType]" :key="cat.id" class="flex justify-between items-center px-5 py-4 border-b border-[#353a47] active:bg-[#2A2D3A] transition-colors">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shadow-md" :style="{ backgroundColor: cat.color }"><i :class="cat.icon"></i></div>
+                        <div><p class="text-gray-200 font-medium text-base">{{ cat.name }}</p><p class="text-xs text-gray-500 mt-1">{{ cat.subs?.length || 0 }} 個子類別</p></div>
+                    </div>
+                    <div class="flex space-x-4 text-gray-500 text-lg">
+                        <button @click="openSettingModal('category', cat, 'edit')" class="hover:text-teal-400"><i class="fas fa-edit"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 5. 數據分析畫面 (Chart) -->
+    <div v-show="currentTab === 'chart'" class="flex-1 flex flex-col w-full h-full overflow-hidden bg-[#1a1d24]">
+        <div class="bg-[#1a1d24] sticky top-0 z-20" style="padding-top: max(env(safe-area-inset-top), 20px);">
+            <div class="relative flex justify-between items-center px-5 pt-4 pb-4">
+                <button class="text-gray-400 text-xl hover:text-white p-0 m-0"><i class="fas fa-chevron-left"></i></button>
+                <h1 class="text-lg font-bold absolute left-1/2 transform -translate-x-1/2 tracking-wider">{{ selectedFullDate.substring(0, 7).replace('/', '年') + '月' }}</h1>
+                <button class="text-gray-400 text-xl hover:text-white p-0 m-0"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            
+            <div class="flex w-full border-b border-[#353a47]">
+                <button @click="chartType = 'expense'" class="flex-1 py-3 text-sm font-medium transition-colors border-b-2" :class="chartType === 'expense' ? 'text-teal-400 border-teal-400' : 'text-gray-500 border-transparent'">支出</button>
+                <button @click="chartType = 'income'" class="flex-1 py-3 text-sm font-medium transition-colors border-b-2" :class="chartType === 'income' ? 'text-teal-400 border-teal-400' : 'text-gray-500 border-transparent'">收入</button>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto flex flex-col">
+            <div class="py-10 flex justify-center items-center relative">
+                <div class="w-64 h-64 rounded-full flex items-center justify-center shadow-lg relative transition-all duration-500" :style="{ background: donutStyle }">
+                    <div class="w-44 h-44 rounded-full bg-[#1a1d24] flex flex-col items-center justify-center z-10 shadow-inner">
+                        <span class="text-sm text-gray-400 mb-1">總{{ chartType === 'expense' ? '支出' : '收入' }}</span>
+                        <span class="text-3xl font-bold text-white">{{ chartTotalAmount.toLocaleString() }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-[#12141C] pt-6 pb-32 flex-1 rounded-t-3xl px-5">
+                <div class="flex justify-between items-center mb-4 text-sm text-gray-400 font-medium">
+                    <span>分類排行</span>
+                    <span>金額</span>
+                </div>
+                
+                <div class="space-y-4">
+                    <div v-if="chartData.length === 0" class="text-center text-gray-500 py-6">本月沒有{{ chartType === 'expense' ? '支出' : '收入' }}資料</div>
+                    <div v-for="item in chartData" :key="item.name" class="flex justify-between items-center border-b border-[#353a47]/50 pb-4 last:border-0">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shadow-md" :style="{ backgroundColor: item.color }"><i :class="item.icon"></i></div>
+                            <div><h4 class="text-gray-200 font-medium text-base">{{ item.name }} <span class="text-gray-500 text-xs ml-1 font-normal">{{ item.percent }}%</span></h4></div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-lg" :class="chartType === 'expense' ? 'text-[#FF5252]' : 'text-[#10AC84]'">
+                                ${{ item.amount.toLocaleString() }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 共用底部導覽列 -->
+    <div class="bg-[#1a1d24] border-t border-[#353a47] fixed bottom-0 w-full max-w-md z-30" style="padding-bottom: env(safe-area-inset-bottom);">
+        <div class="flex justify-between items-center px-6 h-20 relative">
+            <button @click="currentTab = 'home'" class="flex flex-col items-center p-2 transition-colors" :class="currentTab === 'home' ? 'text-white' : 'text-gray-500 hover:text-gray-300'"><i class="fas fa-home text-xl"></i></button>
+            <button @click="currentTab = 'wallet'" class="flex flex-col items-center p-2 transition-colors" :class="currentTab === 'wallet' ? 'text-white' : 'text-gray-500 hover:text-gray-300'"><i class="fas fa-wallet text-xl"></i></button>
+            
+            <div class="absolute left-1/2 transform -translate-x-1/2 -top-6">
+                <button @click="openAddForm" class="w-14 h-14 rounded-full text-white flex items-center justify-center text-2xl border-4 border-[#1a1d24] shadow-lg transition-transform active:scale-95"
+                        :class="currentTab === 'form' && formMode === 'add' ? 'bg-gray-600' : 'bg-teal-600'">
+                    <i class="fas" :class="currentTab === 'form' && formMode === 'add' ? 'fa-times' : 'fa-plus'"></i>
+                </button>
+            </div>
+            
+            <button @click="currentTab = 'chart'" class="flex flex-col items-center p-2 transition-colors" :class="currentTab === 'chart' ? 'text-white' : 'text-gray-500 hover:text-gray-300'"><i class="fas fa-chart-pie text-xl"></i></button>
+            <button @click="currentTab = 'settings'" class="flex flex-col items-center p-2 transition-colors" :class="currentTab === 'settings' ? 'text-white' : 'text-gray-500 hover:text-gray-300'"><i class="fas fa-sliders-h text-xl"></i></button>
+        </div>
+    </div>
+
+    <!-- 設定專用 Modal -->
+    <div v-if="showSettingModal" class="fixed inset-0 z-50 flex items-center justify-center max-w-md mx-auto">
+        <div class="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm" @click="closeSettingModal"></div>
+        <div class="relative bg-[#232631] w-5/6 rounded-2xl p-6 border border-gray-700 max-h-[85vh] overflow-y-auto shadow-2xl">
+            <h3 class="text-lg font-bold text-white mb-5 text-center border-b border-gray-700 pb-3">
+                {{ settingModalMode === 'edit' ? '編輯' : '新增' }}{{ settingModalType === 'account' ? '付款帳戶' : '消費類別' }}
+            </h3>
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-2">{{ settingModalType === 'account' ? '帳戶名稱' : '類別名稱' }}</label>
+                    <input v-model="tempSettingData.name" type="text" :placeholder="settingModalType === 'account' ? '例如：現金錢包' : '例如：飲食'" class="w-full bg-[#1A1C25] border border-gray-700 rounded-lg px-4 py-3 text-white outline-none focus:border-[#54A0FF] transition-colors">
+                </div>
+                
+                <template v-if="settingModalType === 'account'">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-2">帳戶類型</label>
+                        <div class="flex space-x-2">
+                            <button v-for="t in ['現金帳戶', '信用卡', '電子支付']" :key="t" @click="tempSettingData.type = t"
+                                    class="flex-1 py-2.5 rounded-lg text-sm transition-colors border"
+                                    :class="tempSettingData.type === t ? 'bg-[#54A0FF] border-[#54A0FF] text-white shadow-md' : 'bg-[#1A1C25] border-gray-700 text-gray-400'">
+                                {{ t }}
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-2">目前餘額 (TWD)</label>
+                        <input v-model="tempSettingData.initialBalance" type="number" placeholder="0" class="w-full bg-[#1A1C25] border border-gray-700 rounded-lg px-4 py-3 text-white outline-none focus:border-[#54A0FF] transition-colors">
+                    </div>
+                </template>
+                
+                <template v-if="settingModalType === 'category'">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-2">收支屬性</label>
+                        <div class="flex space-x-2">
+                            <button v-for="t in [{l:'支出', v:'expense', c:'bg-[#FF5252] border-[#FF5252]'}, {l:'收入', v:'income', c:'bg-[#10AC84] border-[#10AC84]'}, {l:'轉帳', v:'transfer', c:'bg-blue-400 border-blue-400'}]" :key="t.v"
+                                    @click="settingModalMode === 'add' ? tempSettingData.type = t.v : null"
+                                    class="flex-1 py-2.5 rounded-lg text-sm transition-colors border"
+                                    :class="[tempSettingData.type === t.v ? t.c + ' text-white shadow-md' : 'bg-[#1A1C25] border-gray-700 text-gray-400', settingModalMode === 'edit' ? 'opacity-50 cursor-not-allowed' : '']">
+                                {{ t.l }}
+                            </button>
+                        </div>
+                        <p v-if="settingModalMode === 'edit'" class="text-[10px] text-gray-500 mt-1 text-center">編輯模式無法更改收支屬性</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">子分類 (用逗號分隔，選填)</label>
+                        <input v-model="tempSettingData.subsString" type="text" placeholder="例如：早餐, 午餐" class="w-full bg-[#1A1C25] border border-gray-700 rounded-lg px-3 py-2 text-white outline-none focus:border-[#54A0FF]">
+                    </div>
+                </template>
+
+                <div>
+                    <label class="block text-xs text-gray-400 mb-2">代表顏色</label>
+                    <div class="flex flex-wrap gap-3">
+                        <button v-for="c in colorOptions" :key="c" @click="tempSettingData.color = c"
+                                class="w-8 h-8 rounded-full border-[3px] transition-transform active:scale-90"
+                                :class="tempSettingData.color === c ? 'border-white scale-110 shadow-lg' : 'border-transparent'"
+                                :style="{ backgroundColor: c }"></button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-400 mb-2">代表圖示</label>
+                    <div class="grid grid-cols-5 gap-2">
+                        <button v-for="ic in iconOptions" :key="ic" @click="tempSettingData.icon = ic"
+                                class="h-10 rounded-lg flex items-center justify-center text-xl transition-colors border"
+                                :class="tempSettingData.icon === ic ? 'bg-[#54A0FF] border-[#54A0FF] text-white shadow-md' : 'bg-[#1A1C25] border-gray-700 text-gray-400 hover:bg-[#353a47]'">
+                            <i :class="ic"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end items-center mt-8 space-x-3 pt-4 border-t border-gray-700">
+                <button v-if="settingModalMode === 'edit'" @click="deleteSettingItem" class="px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-lg mr-auto transition-colors"><i class="fas fa-trash-alt mr-1"></i>刪除</button>
+                <button @click="closeSettingModal" class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">取消</button>
+                <button @click="saveSettingItem" class="px-5 py-2 text-sm bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition-colors shadow-lg">確認儲存</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const { createApp, ref, computed, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            // ==========================================
+            // API 連線設定
+            // ==========================================
+            const API_URL = 'https://script.google.com/macros/s/AKfycbw0tp1vywQKRyEfxkEOohsasPYHzd27DAXYtaml_PGKfTpdLe26UisDR6bS29VhzyLu/exec';
+            const isLoading = ref(true); // 開局直接顯示 Loading
+            
+            // 共用的 API 呼叫函式
+            const callAPI = async (action, data = {}) => {
+                isLoading.value = true;
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        // 使用 text/plain 可以繞過跨網域 CORS 預檢請求限制
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action, data })
+                    });
+                    const result = await response.json();
+                    if (!result.success) throw new Error(result.error);
+                    return result;
+                } catch (error) {
+                    alert('雲端連線發生錯誤：' + error.message);
+                    console.error(error);
+                    return null;
+                } finally {
+                    isLoading.value = false;
+                }
+            };
+
+            // ==========================================
+            // 資料儲存容器 (全空，等 API 填入)
+            // ==========================================
+            const accounts = ref([]);
+            const allCategories = ref({ expense: [], income: [], transfer: [] });
+            const dailyTransactions = ref([]);
+
+            // ==========================================
+            // 初始化載入資料
+            // ==========================================
+            const initData = async () => {
+                const res = await callAPI('getData');
+                if (res && res.data) {
+                    // 1. 解析帳戶
+                    accounts.value = res.data.accounts.map(a => ({
+                        ...a,
+                        initialBalance: Number(a.initialBalance) || 0,
+                        balance: Number(a.initialBalance) || 0
+                    }));
+
+                    // 如果沒帳戶，提供預設選項，但不強制寫入資料庫，讓使用者自行決定
+                    if (accounts.value.length === 0) {
+                        accounts.value.push({ id: 'acc_default', name: '現金錢包', type: '現金帳戶', icon: 'fas fa-wallet', color: '#10AC84', initialBalance: 0, balance: 0 });
+                    }
+
+                    // 2. 解析分類
+                    const parsedCategories = { expense: [], income: [], transfer: [] };
+                    res.data.categories.forEach(c => {
+                        c.subs = c.subs ? String(c.subs).split(',').map(s=>s.trim()).filter(s=>s) : [];
+                        if(parsedCategories[c.type]) parsedCategories[c.type].push(c);
+                    });
+                    
+                    // 若無分類，提供最基礎預設
+                    if (parsedCategories.expense.length === 0) parsedCategories.expense.push({ id: 'cat_e_def', name: '一般花費', icon: 'fas fa-shopping-bag', color: '#FF9F43', subs: [] });
+                    if (parsedCategories.income.length === 0) parsedCategories.income.push({ id: 'cat_i_def', name: '一般收入', icon: 'fas fa-sack-dollar', color: '#10AC84', subs: [] });
+                    if (parsedCategories.transfer.length === 0) parsedCategories.transfer.push({ id: 'cat_t_def', name: '一般轉帳', icon: 'fas fa-exchange-alt', color: '#54A0FF', subs: [] });
+                    
+                    allCategories.value = parsedCategories;
+
+                    // 3. 解析交易明細
+                    dailyTransactions.value = res.data.transactions.map(t => ({
+                        ...t,
+                        numAmount: Number(t.numAmount) || 0
+                    })).sort((a, b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time)); // 依日期時間新到舊排序
+
+                    recalculateBalances();
+                }
+            };
+            // Vue 元件掛載完成時觸發 API
+            onMounted(initData);
+
+            // ==========================================
+            // 日期與畫面狀態
+            // ==========================================
+            const currentTab = ref('home'); 
+            const now = new Date();
+            const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+            const selectedFullDate = ref(localDate.replace(/-/g, '/')); 
+            
+            const generateCalendar = () => {
+                const days = [];
+                const base = new Date();
+                base.setDate(base.getDate() - 7);
+                for(let i=0; i<21; i++) {
+                    const d = new Date(base);
+                    const text = d.getDate().toString().padStart(2, '0');
+                    const fullDate = d.toISOString().split('T')[0].replace(/-/g, '/');
+                    days.push({ fullDate, text, isDimmed: false, isSunday: d.getDay() === 0, isToday: fullDate === localDate.replace(/-/g, '/'), isSelected: fullDate === selectedFullDate.value });
+                    base.setDate(base.getDate() + 1);
+                }
+                return days;
+            };
+            const calendarDays = ref(generateCalendar());
+            const isCalendarExpanded = ref(false);
+            const visibleCalendarDays = computed(() => {
+                if (isCalendarExpanded.value) return calendarDays.value;
+                const selectedIdx = calendarDays.value.findIndex(d => d.isSelected);
+                const weekStart = Math.floor(Math.max(0, selectedIdx) / 7) * 7;
+                return calendarDays.value.slice(weekStart, weekStart + 7);
+            });
+            const toggleCalendar = () => isCalendarExpanded.value = !isCalendarExpanded.value;
+            const selectDate = (clickedDay) => { calendarDays.value.forEach(d => d.isSelected = false); clickedDay.isSelected = true; selectedFullDate.value = clickedDay.fullDate; };
+            const showSearch = ref(false);
+            const searchQuery = ref('');
+            const toggleSearch = () => { showSearch.value = !showSearch.value; if (!showSearch.value) searchQuery.value = ''; };
+
+            // ==========================================
+            // 餘額計算與 Dashboard 數據
+            // ==========================================
+            const recalculateBalances = () => {
+                accounts.value.forEach(acc => acc.balance = acc.initialBalance || 0);
+                dailyTransactions.value.forEach(tx => {
+                    const acc = accounts.value.find(a => a.id === tx.accountId);
+                    if (acc) {
+                        if (tx.type === 'expense') acc.balance -= tx.numAmount;
+                        if (tx.type === 'income') acc.balance += tx.numAmount;
+                    }
+                });
+            };
+
+            const currentMonthExpense = computed(() => { const prefix = selectedFullDate.value.replace(/\//g, '-').substring(0, 7); return dailyTransactions.value.filter(t => t.type === 'expense' && t.date.startsWith(prefix)).reduce((sum, t) => sum + t.numAmount, 0); });
+            const currentMonthIncome = computed(() => { const prefix = selectedFullDate.value.replace(/\//g, '-').substring(0, 7); return dailyTransactions.value.filter(t => t.type === 'income' && t.date.startsWith(prefix)).reduce((sum, t) => sum + t.numAmount, 0); });
+            const currentMonthNet = computed(() => currentMonthIncome.value - currentMonthExpense.value);
+
+            const filteredTransactions = computed(() => {
+                let result = dailyTransactions.value;
+                if (searchQuery.value.trim()) {
+                    const q = searchQuery.value.toLowerCase();
+                    return result.filter(t => t.name.toLowerCase().includes(q) || (t.memo && t.memo.toLowerCase().includes(q)) || t.numAmount.toString().includes(q));
+                } else {
+                    const targetDate = selectedFullDate.value.replace(/\//g, '-');
+                    return result.filter(t => t.date === targetDate);
+                }
+            });
+
+            // ==========================================
+            // Wallet 錢包
+            // ==========================================
+            const hideBalance = ref(false);
+            const totalAssets = computed(() => accounts.value.filter(a => a.balance > 0).reduce((sum, a) => sum + a.balance, 0));
+            const totalLiabilities = computed(() => accounts.value.filter(a => a.balance < 0).reduce((sum, a) => sum + Math.abs(a.balance), 0));
+            const totalNet = computed(() => totalAssets.value - totalLiabilities.value);
+            const groupedAccounts = computed(() => {
+                const groups = {};
+                accounts.value.forEach(acc => {
+                    let key = '現金';
+                    if (acc.type === '信用卡') key = '信用卡';
+                    else if (acc.type === '電子支付') key = '電子支付';
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(acc);
+                });
+                return groups;
+            });
+            const getGroupTotal = (group) => group.reduce((sum, acc) => sum + acc.balance, 0);
+
+            // ==========================================
+            // Chart 報表
+            // ==========================================
+            const chartType = ref('expense');
+            const chartData = computed(() => {
+                const currentMonthPrefix = selectedFullDate.value.replace(/\//g, '-').substring(0, 7);
+                const filtered = dailyTransactions.value.filter(t => t.type === chartType.value && t.date.startsWith(currentMonthPrefix));
+                const total = filtered.reduce((sum, t) => sum + t.numAmount, 0);
+                if (total === 0) return [];
+                const groups = {};
+                filtered.forEach(t => {
+                    if(!groups[t.categoryName]) { groups[t.categoryName] = { name: t.categoryName, amount: 0, icon: t.icon, color: t.color }; }
+                    groups[t.categoryName].amount += t.numAmount;
+                });
+                return Object.values(groups).map(g => ({ ...g, percent: ((g.amount / total) * 100).toFixed(1) })).sort((a, b) => b.amount - a.amount);
+            });
+            const chartTotalAmount = computed(() => chartData.value.reduce((sum, d) => sum + d.amount, 0));
+            const donutStyle = computed(() => {
+                if(chartData.value.length === 0) return 'conic-gradient(#2A2D3A 0% 100%)';
+                let gradient = []; let currentPercent = 0;
+                chartData.value.forEach(d => {
+                    const nextPercent = currentPercent + parseFloat(d.percent);
+                    gradient.push(`${d.color} ${currentPercent}% ${nextPercent}%`);
+                    currentPercent = nextPercent;
+                });
+                return `conic-gradient(${gradient.join(', ')})`;
+            });
+
+            // ==========================================
+            // Form 表單
+            // ==========================================
+            const formMode = ref('add'); 
+            const editingTransactionId = ref(null); 
+            const transactionType = ref('expense');
+            const amount = ref('');
+            const itemName = ref(''); 
+            const memo = ref('');     
+            const transactionDate = ref(localDate);
+            const transactionTime = ref(now.toTimeString().slice(0, 5));
+            
+            const currentCategories = computed(() => allCategories.value[transactionType.value] || []);
+            const selectedAccount = ref(accounts.value.length > 0 ? accounts.value[0] : null);
+            const selectedCategory = ref(currentCategories.value.length > 0 ? currentCategories.value[0] : null);
+
+            const setTransactionType = (type) => {
+                transactionType.value = type;
+                selectedCategory.value = currentCategories.value.length > 0 ? currentCategories.value[0] : null; 
+            };
+
+            const resetForm = () => {
+                amount.value = ''; itemName.value = ''; memo.value = '';
+                transactionDate.value = selectedFullDate.value.replace(/\//g, '-'); transactionTime.value = new Date().toTimeString().slice(0, 5);
+                setTransactionType('expense');
+                if(accounts.value.length > 0) selectedAccount.value = accounts.value[0];
+            };
+
+            const openAddForm = () => {
+                if (currentTab.value === 'form' && formMode.value === 'add') { currentTab.value = 'home'; } 
+                else { formMode.value = 'add'; editingTransactionId.value = null; resetForm(); currentTab.value = 'form'; }
+            };
+
+            const openTransactionEdit = (item) => {
+                formMode.value = 'edit'; editingTransactionId.value = item.id;
+                transactionType.value = item.type; amount.value = item.numAmount; itemName.value = item.name; memo.value = item.memo; transactionDate.value = item.date;
+                selectedAccount.value = accounts.value.find(a => a.id === item.accountId) || accounts.value[0]; 
+                const targetCat = allCategories.value[item.type].find(c => c.name === item.categoryName);
+                if(targetCat) selectedCategory.value = targetCat;
+                currentTab.value = 'form';
+            };
+
+            // 🔥 儲存明細至 API
+            const saveTransaction = async () => {
+                if (!amount.value || amount.value <= 0) return alert('請輸入有效金額！');
+                if (!selectedAccount.value) return alert('請先建立並選擇一個付款帳戶！');
+                
+                const numAmt = parseInt(amount.value.toString().replace(/,/g, ''));
+                const cat = selectedCategory.value || { name: '未分類', icon: 'fas fa-star', color: '#555' };
+                
+                const txData = { 
+                    id: formMode.value === 'add' ? 'tx_' + Date.now() : editingTransactionId.value, 
+                    date: transactionDate.value, 
+                    time: transactionTime.value, 
+                    type: transactionType.value, 
+                    accountId: selectedAccount.value.id, 
+                    categoryName: cat.name, 
+                    name: itemName.value || cat.name, 
+                    memo: memo.value, 
+                    numAmount: numAmt, 
+                    icon: cat.icon, 
+                    color: cat.color 
+                };
+
+                const res = await callAPI('saveTransaction', txData);
+                if (res) {
+                    if (formMode.value === 'add') { dailyTransactions.value.unshift(txData); } 
+                    else { const idx = dailyTransactions.value.findIndex(t => t.id === editingTransactionId.value); if(idx !== -1) dailyTransactions.value[idx] = txData; }
+                    
+                    // 重新排序確保時間正確
+                    dailyTransactions.value.sort((a, b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
+                    
+                    recalculateBalances();
+                    selectedFullDate.value = txData.date.replace(/-/g, '/');
+                    calendarDays.value.forEach(d => { d.isSelected = (d.fullDate === selectedFullDate.value); });
+                    currentTab.value = 'home';
+                }
+            };
+
+            // 🔥 刪除明細
+            const executeDeleteTransaction = async () => {
+                if(confirm('確定要刪除這筆記錄嗎？刪除後無法復原。')) { 
+                    const res = await callAPI('deleteTransaction', { id: editingTransactionId.value });
+                    if(res) {
+                        dailyTransactions.value = dailyTransactions.value.filter(t => t.id !== editingTransactionId.value); 
+                        recalculateBalances(); 
+                        currentTab.value = 'home'; 
+                    }
+                }
+            };
+
+            // ==========================================
+            // 設定管理 Settings
+            // ==========================================
+            const settingTab = ref('category'); 
+            const settingCategoryType = ref('expense');
+            const showSettingModal = ref(false);
+            const settingModalMode = ref('add'); 
+            const settingModalType = ref('');    
+            const tempSettingData = ref({});     
+            let editingSettingId = null;   
+
+            const colorOptions = ['#FF5252', '#FF9F43', '#FDCB6E', '#10AC84', '#01A3A4', '#54A0FF', '#2E3192', '#9B59B6'];
+            const iconOptions = ['fas fa-wallet', 'fas fa-credit-card', 'fas fa-mobile-alt', 'fas fa-piggy-bank', 'fas fa-utensils', 'fas fa-car', 'fas fa-shopping-bag', 'fas fa-home', 'fas fa-heart', 'fas fa-plane', 'fas fa-gamepad', 'fas fa-laptop', 'fas fa-book', 'fas fa-hospital', 'fas fa-baby-carriage'];
+
+            const openAddSettingDirectly = () => { openSettingModal(settingTab.value, null, 'add'); };
+
+            const openSettingModal = (type, item, mode) => {
+                settingModalMode.value = mode; 
+                settingModalType.value = type;
+                if (mode === 'edit') {
+                    editingSettingId = item.id;
+                    tempSettingData.value = { 
+                        name: item.name, 
+                        type: type === 'account' ? item.type : settingCategoryType.value,
+                        icon: item.icon, 
+                        color: item.color, 
+                        initialBalance: type === 'account' ? item.initialBalance : 0,
+                        subsString: type === 'category' && item.subs ? item.subs.join(', ') : ''
+                    };
+                } else {
+                    tempSettingData.value = type === 'account' 
+                        ? { name: '', type: '現金帳戶', icon: 'fas fa-wallet', color: colorOptions[3], initialBalance: '' } 
+                        : { name: '', type: settingCategoryType.value, icon: 'fas fa-star', color: colorOptions[1], subsString: '' };
+                }
+                showSettingModal.value = true;
+            };
+
+            const closeSettingModal = () => { showSettingModal.value = false; tempSettingData.value = {}; editingSettingId = null; };
+
+            // 🔥 儲存設定至 API
+            const saveSettingItem = async () => {
+                if (!tempSettingData.value.name.trim()) return alert('請輸入名稱');
+                
+                const finalIcon = tempSettingData.value.icon;
+                const finalColor = tempSettingData.value.color;
+
+                if (settingModalType.value === 'account') {
+                    const bal = parseInt(tempSettingData.value.initialBalance) || 0;
+                    const accData = { 
+                        id: settingModalMode.value === 'add' ? 'acc_' + Date.now() : editingSettingId, 
+                        name: tempSettingData.value.name, 
+                        type: tempSettingData.value.type, 
+                        icon: finalIcon, color: finalColor, 
+                        initialBalance: bal 
+                    };
+                    
+                    const res = await callAPI('saveAccount', accData);
+                    if(res) {
+                        accData.balance = bal; // Local field
+                        if (settingModalMode.value === 'add') { accounts.value.push(accData); } 
+                        else {
+                            const idx = accounts.value.findIndex(a => a.id === editingSettingId);
+                            if(idx !== -1) accounts.value[idx] = accData;
+                        }
+                        recalculateBalances();
+                    }
+                } else if (settingModalType.value === 'category') {
+                    const finalSubsString = tempSettingData.value.subsString ? tempSettingData.value.subsString.trim() : '';
+                    const catData = { 
+                        id: settingModalMode.value === 'add' ? 'cat_' + Date.now() : editingSettingId, 
+                        name: tempSettingData.value.name, 
+                        type: tempSettingData.value.type, 
+                        icon: finalIcon, color: finalColor, 
+                        subs: finalSubsString 
+                    };
+                    
+                    const res = await callAPI('saveCategory', catData);
+                    if(res) {
+                        catData.subs = finalSubsString ? finalSubsString.split(',').map(s => s.trim()).filter(s => s) : [];
+                        if (settingModalMode.value === 'add') { allCategories.value[tempSettingData.value.type].push(catData); } 
+                        else {
+                            const list = allCategories.value[tempSettingData.value.type];
+                            const idx = list.findIndex(c => c.id === editingSettingId);
+                            if(idx !== -1) list[idx] = catData;
+                        }
+                    }
+                }
+                closeSettingModal();
+            };
+
+            // 🔥 刪除設定
+            const deleteSettingItem = async () => {
+                if(!confirm(`確定要刪除「${tempSettingData.value.name}」嗎？`)) return;
+                
+                if (settingModalType.value === 'account') {
+                    if (accounts.value.length <= 1) return alert('必須保留至少一個付款方式！');
+                    const res = await callAPI('deleteAccount', { id: editingSettingId });
+                    if(res) {
+                        accounts.value = accounts.value.filter(a => a.id !== editingSettingId);
+                        if (selectedAccount.value?.id === editingSettingId) selectedAccount.value = accounts.value[0];
+                    }
+                } else if (settingModalType.value === 'category') {
+                    const list = allCategories.value[tempSettingData.value.type];
+                    if (list.length <= 1) return alert('該屬性必須保留至少一個分類！');
+                    const res = await callAPI('deleteCategory', { id: editingSettingId });
+                    if(res) {
+                        allCategories.value[tempSettingData.value.type] = list.filter(c => c.id !== editingSettingId);
+                        if (selectedCategory.value?.id === editingSettingId) selectedCategory.value = allCategories.value[tempSettingData.value.type][0];
+                    }
+                }
+                closeSettingModal();
+            };
+
+            return {
+                isLoading, currentTab, hideBalance, totalNet, totalAssets, totalLiabilities, groupedAccounts, getGroupTotal,
+                chartType, chartData, chartTotalAmount, donutStyle, currentMonthExpense, currentMonthIncome, currentMonthNet,
+                selectedFullDate, calendarDays, visibleCalendarDays, toggleCalendar, isCalendarExpanded,
+                dailyTransactions, filteredTransactions, selectDate, showSearch, toggleSearch, searchQuery,
+                formMode, openAddForm, openTransactionEdit, executeDeleteTransaction,
+                transactionType, amount, itemName, memo, transactionDate, transactionTime,
+                accounts, allCategories, currentCategories, selectedAccount, selectedCategory, setTransactionType,
+                settingTab, settingCategoryType, openAddSettingDirectly,
+                showSettingModal, settingModalMode, settingModalType, tempSettingData, colorOptions, iconOptions,
+                openSettingModal, closeSettingModal, saveSettingItem, deleteSettingItem, saveTransaction
+            }
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
