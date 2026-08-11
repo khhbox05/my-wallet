@@ -9,6 +9,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#131314">
     
+    <!-- 設定手機主畫面圖示 (需自行上傳 icon.png 至 GitHub) -->
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
+    
     <title>LiteWallet</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -220,6 +224,14 @@
                     </div>
                 </div>
             </div>
+
+            <div class="flex items-center space-x-6 pt-6 mt-4 border-t border-[#444746]">
+                <label class="flex items-center cursor-pointer space-x-2"><div class="relative"><input type="checkbox" v-model="isInstallment" class="sr-only"><div class="block w-10 h-6 rounded-full transition-colors" :class="isInstallment ? 'bg-[#FF5252]' : 'bg-gray-600'"></div><div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform" :class="isInstallment ? 'transform translate-x-4' : ''"></div></div><span class="text-sm text-gray-300">分期</span></label>
+                <label class="flex items-center cursor-pointer space-x-2"><div class="relative"><input type="checkbox" v-model="isRecurring" class="sr-only"><div class="block w-10 h-6 rounded-full transition-colors" :class="isRecurring ? 'bg-[#10AC84]' : 'bg-gray-600'"></div><div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform" :class="isRecurring ? 'transform translate-x-4' : ''"></div></div><span class="text-sm text-gray-300">週期</span></label>
+            </div>
+            
+            <div v-if="isInstallment" class="flex items-center justify-between bg-custom-btn mt-3 p-3 rounded-xl border border-custom"><span class="text-sm text-gray-300">設定分期期數</span><div class="flex items-center space-x-2"><input v-model="installmentMonths" type="number" min="2" class="w-12 bg-transparent border-b border-gray-500 text-white text-center outline-none text-sm"><span class="text-sm text-gray-400">期</span></div></div>
+            <div v-if="isRecurring" class="flex items-center justify-between bg-custom-btn mt-3 p-3 rounded-xl border border-custom"><span class="text-sm text-gray-300">設定扣款頻率</span><select v-model="recurringType" class="bg-[#282A2C] text-white border border-gray-600 rounded-lg px-2 py-1 text-sm outline-none"><option value="daily">每日</option><option value="weekly">每週</option><option value="monthly">每月</option><option value="yearly">每年</option></select></div>
 
             <div class="mt-6 mb-8"><div class="text-gray-400 text-sm mb-2 font-medium">#詳細備註</div><textarea v-model="memo" class="w-full h-24 rounded-xl border border-custom bg-custom-btn p-3 text-white text-sm outline-none resize-none placeholder-gray-500 focus:border-gray-400 transition-colors" placeholder="輸入備註..."></textarea></div>
 
@@ -645,6 +657,7 @@
             };
             onMounted(initData);
 
+            // 🔥 宣告表單與所有關聯變數
             const formMode = ref('add'); 
             const editingTransactionId = ref(null); 
             const transactionType = ref('expense');
@@ -653,6 +666,12 @@
             const memo = ref('');     
             const transactionDate = ref(localDate.replace(/\//g, '-'));
             const transactionTime = ref(now.toTimeString().slice(0, 5));
+            
+            // 🔥 在此補回遺漏的四個變數
+            const isInstallment = ref(false);
+            const installmentMonths = ref(3);
+            const isRecurring = ref(false);
+            const recurringType = ref('monthly');
             
             const currentCategories = computed(() => allCategories.value[transactionType.value] || []);
             const selectedAccount = ref(null);
@@ -667,6 +686,8 @@
                 amount.value = ''; itemName.value = ''; memo.value = '';
                 transactionDate.value = selectedFullDate.value.replace(/\//g, '-'); 
                 transactionTime.value = new Date().toTimeString().slice(0, 5);
+                isInstallment.value = false;
+                isRecurring.value = false;
                 setTransactionType('expense');
                 if(accounts.value.length > 0) selectedAccount.value = accounts.value[0];
             };
@@ -840,6 +861,7 @@
                 dailyTransactions, filteredTransactions, selectDate, showSearch, toggleSearch, searchQuery,
                 formMode, openAddForm, openTransactionEdit, executeDeleteTransaction,
                 transactionType, amount, itemName, memo, transactionDate, transactionTime,
+                isInstallment, installmentMonths, isRecurring, recurringType,
                 accounts, allCategories, currentCategories, selectedAccount, selectedCategory, setTransactionType,
                 settingTab, settingCategoryType, openAddSettingDirectly,
                 showSettingModal, settingModalMode, settingModalType, tempSettingData, colorOptions, iconOptions,
